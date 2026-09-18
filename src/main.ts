@@ -30,10 +30,10 @@ class ColumnsModal extends Modal {
   }
 
   onOpen(): void {
-    this.titleEl.setText("グリッドの列数");
+    this.titleEl.setText("Grid columns");
     for (let columns = 1; columns <= 6; columns++) {
-      new Setting(this.contentEl).setName(`${columns}列`).addButton(button => {
-        button.setButtonText("適用").onClick(() => {
+      new Setting(this.contentEl).setName(`${columns} column${columns === 1 ? "" : "s"}`).addButton(button => {
+        button.setButtonText("Apply").onClick(() => {
           this.submit(columns);
           this.close();
         });
@@ -53,25 +53,25 @@ class FiguresAndTablesSettingTab extends PluginSettingTab {
 
   display(): void {
     this.containerEl.empty();
-    for (const [key, name] of [["figureCaption", "図のキャプション位置"], ["tableCaption", "表のキャプション位置"]] as const) {
+    for (const [key, name] of [["figureCaption", "Figure caption position"], ["tableCaption", "Table caption position"]] as const) {
       new Setting(this.containerEl).setName(name)
-        .setDesc("caption=top / bottom を指定した図表では、個別の指定を優先します。")
-        .addDropdown(dropdown => dropdown.addOption("top", "上").addOption("bottom", "下")
+        .setDesc("Override this for individual figures or tables with caption=top or caption=bottom.")
+        .addDropdown(dropdown => dropdown.addOption("top", "Top").addOption("bottom", "Bottom")
           .setValue(this.plugin.settings[key]).onChange(async value => {
             this.plugin.settings[key] = value === "top" ? "top" : "bottom";
             await this.plugin.saveSettings();
           }));
     }
-    new Setting(this.containerEl).setName("既定の列数").setDesc("cols の省略時と、グリッド作成コマンドで使用します。")
+    new Setting(this.containerEl).setName("Default columns").setDesc("Used when cols is omitted and when creating a grid.")
       .addDropdown(dropdown => {
-        for (let columns = 1; columns <= 6; columns++) dropdown.addOption(String(columns), `${columns}列`);
+        for (let columns = 1; columns <= 6; columns++) dropdown.addOption(String(columns), `${columns} column${columns === 1 ? "" : "s"}`);
         dropdown.setValue(String(this.plugin.settings.columns)).onChange(async value => {
           this.plugin.settings.columns = Number(value);
           await this.plugin.saveSettings();
         });
       });
-    for (const [key, name] of [["lgap", "既定の横方向の間隔"], ["vgap", "既定の縦方向の間隔"]] as const) {
-      new Setting(this.containerEl).setName(name).setDesc(`${key} の省略時の間隔（px）。`)
+    for (const [key, name] of [["lgap", "Default horizontal spacing"], ["vgap", "Default vertical spacing"]] as const) {
+      new Setting(this.containerEl).setName(name).setDesc(`Spacing in pixels when ${key} is omitted.`)
         .addSlider(slider => slider.setLimits(0, 96, 1).setValue(this.plugin.settings[key]).setDynamicTooltip()
           .onChange(async value => {
             this.plugin.settings[key] = value;
@@ -95,29 +95,29 @@ export default class FiguresAndTablesPlugin extends Plugin {
     this.registerEditorExtension(calloutEditorExtension(this.renderer));
     this.addSettingTab(new FiguresAndTablesSettingTab(this.app, this));
 
-    for (const [kind, name] of [["figure", "選択範囲を図にする / 図を挿入"], ["table", "選択範囲を表にする / 表を挿入"]] as const) {
+    for (const [kind, name] of [["figure", "Insert figure / wrap selection"], ["table", "Insert table / wrap selection"]] as const) {
       this.addCommand({ id: `insert-${kind}`, name,
         editorCallback: editor => this.edit(editor, (source, from, to) => wrapCaption(source, from, to, kind)),
       });
     }
     this.addCommand({
       id: "wrap-grid",
-      name: "選択した図表をグリッドにする / グリッドを挿入",
+      name: "Insert grid / wrap selected figures and tables",
       editorCallback: editor => this.edit(editor, (source, from, to) => wrapGrid(source, from, to, this.settings.columns, this.settings.lgap, this.settings.vgap)),
     });
     this.addCommand({
       id: "change-grid-columns",
-      name: "グリッドの列数を変更（先頭行）",
+      name: "Change grid columns (from the header)",
       editorCallback: editor => {
         const lineNumber = editor.getCursor().line;
         const line = editor.getLine(lineNumber);
         if (!isGridHeader(line)) {
-          new Notice("[!grid] の先頭行にカーソルを置いてください。");
+          new Notice("Place the cursor on the [!grid] header.");
           return;
         }
         new ColumnsModal(this.app, columns => {
           if (editor.getLine(lineNumber) !== line) {
-            new Notice("行が変更されたため、列数の変更を中止しました。もう一度実行してください。");
+            new Notice("The line changed, so the column update was canceled. Run the command again.");
             return;
           }
           editor.replaceRange(changeGridColumns(line, columns), { line: lineNumber, ch: 0 }, { line: lineNumber, ch: line.length });
@@ -145,7 +145,7 @@ export default class FiguresAndTablesPlugin extends Plugin {
       editor.transaction({ changes: [{ from: editor.offsetToPos(edit.from), to: editor.offsetToPos(edit.to), text: edit.text }] });
       editor.setSelection(editor.offsetToPos(edit.anchor), editor.offsetToPos(edit.head));
     } catch (error) {
-      new Notice(error instanceof Error ? error.message : "図表を作成できませんでした。");
+      new Notice(error instanceof Error ? error.message : "Could not create the figure or table.");
     }
   }
 }

@@ -27,8 +27,8 @@ afterEach(() => {
 describe("native callout decoration", () => {
   it("keeps image/link/table nodes and handlers intact while associating captions", () => {
     const { root, controller } = setup(callout("grid", "Grid",
-      callout("figure", "図 <strong>A</strong>", '<p><a href="#note"><img src="a.png"></a></p>') +
-      callout("table", "表 B", '<table><tbody><tr><td>42</td></tr></tbody></table>'), "cols=2 lgap=24 vgap=24"));
+      callout("figure", "Figure <strong>A</strong>", '<p><a href="#note"><img src="a.png"></a></p>') +
+      callout("table", "Table B", '<table><tbody><tr><td>42</td></tr></tbody></table>'), "cols=2 lgap=24 vgap=24"));
     const image = root.querySelector("img");
     const cell = root.querySelector("td");
     let clicked = false;
@@ -42,7 +42,7 @@ describe("native callout decoration", () => {
     expect(root.querySelectorAll(".callout-title-inner")).toHaveLength(3);
     expect(root.querySelector(".ft-figure")?.getAttribute("role")).toBe("figure");
     const table = root.querySelector("table")!;
-    expect(document.getElementById(table.getAttribute("aria-labelledby")!)?.textContent).toBe("表 B");
+    expect(document.getElementById(table.getAttribute("aria-labelledby")!)?.textContent).toBe("Table B");
   });
 
   it("clamps column spans and leaves unrelated callouts alone", () => {
@@ -54,9 +54,9 @@ describe("native callout decoration", () => {
   it("mixes bare tables and image paragraphs with captioned callouts without touching prose", () => {
     const { root, controller } = setup(callout("grid", "Grid",
       '<table><tbody><tr><td>27 A</td></tr></tbody></table>' +
-      callout("table", "キャプション", '<table><tr><td>35 A</td></tr></table>') +
+      callout("table", "Caption", '<table><tr><td>35 A</td></tr></table>') +
       '<p><a href="note"><img src="a.png"></a></p>' +
-      '<p>説明文 <img src="inline.png"></p>' +
+      '<p>Explanatory text <img src="inline.png"></p>' +
       '<ul><li><img src="list.png"></li></ul>' +
       callout("note", "Note", '<table><tr><td>Other</td></tr></table>')));
     const content = root.querySelector(".ft-grid > .callout-content")!;
@@ -92,7 +92,7 @@ describe("native callout decoration", () => {
     const content = root.querySelector(".callout-content")!;
     const paragraph = content.querySelector("p")!;
     expect(paragraph.classList.contains("ft-grid-figure")).toBe(true);
-    paragraph.lastChild!.textContent = "説明文";
+    paragraph.lastChild!.textContent = "Explanatory text";
     content.insertAdjacentHTML("beforeend", "<table><tr><td>27 A</td></tr></table>");
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(paragraph.classList.contains("ft-grid-item")).toBe(false);
@@ -150,7 +150,7 @@ describe("native callout decoration", () => {
   });
 
   it("handles asynchronously rendered tables and recycled callout types", async () => {
-    const { root } = setup(callout("table", "表 A", ""));
+    const { root } = setup(callout("table", "Table A", ""));
     const element = root.firstElementChild!;
     element.querySelector(".callout-content")!.innerHTML = "<table><tr><td>A</td></tr></table>";
     await new Promise(resolve => setTimeout(resolve, 0));

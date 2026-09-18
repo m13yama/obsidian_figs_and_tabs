@@ -57,20 +57,20 @@ try {
 
   const source = [
     "> [!grid|cols=2 lgap=24 vgap=40]",
-    "> > [!figure] 図A **装置**",
+    "> > [!figure] Figure A **Apparatus**",
     "> > ![[example-apparatus.svg]]",
     ">",
-    "> > [!table] 表B 測定条件",
-    "> > | 項目 | 値 |",
+    "> > [!table] Table B Measurement conditions",
+    "> > | Item | Value |",
     "> > | --- | --- |",
-    "> > | 温度 | 25℃ |",
-    "> > | 識別子 | ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 |",
+    "> > | Temperature | 25°C |",
+    "> > | ID | ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 |",
     ">",
-    "> > [!figure|span=2] 図C 結果",
+    "> > [!figure|span=2] Figure C Results",
     "> > ![[example-results.svg]]",
-    "", "グリッド外の本文", "",
-    "> [!figure|caption=top] 図D 独立した図",
-    "> ![[example-apparatus.svg]]", "", "編集位置",
+    "", "Text outside the grid", "",
+    "> [!figure|caption=top] Figure D Standalone figure",
+    "> ![[example-apparatus.svg]]", "", "Editing position",
   ].join("\n");
   await page.evaluate(async source => {
     const existing = app.vault.getAbstractFileByPath("smoke.md");
@@ -101,7 +101,7 @@ try {
           title: box(item.querySelector(":scope > .callout-title")),
           content: box(item.querySelector(":scope > .callout-content")),
         })),
-        outside: [...root.querySelectorAll("p, .cm-line")].find(p => p.textContent === "グリッド外の本文")?.closest(".ft-grid") === null,
+        outside: [...root.querySelectorAll("p, .cm-line")].find(p => p.textContent === "Text outside the grid")?.closest(".ft-grid") === null,
         standalone: [...root.querySelectorAll(".ft-figure")].filter(e => !e.parentElement.closest(".ft-grid")).length,
         captionCount: grid.querySelectorAll(".callout-title-inner").length,
       };
@@ -172,71 +172,71 @@ try {
 
   await page.evaluate(() => {
     const editor = app.workspace.activeLeaf.view.editor;
-    const index = editor.getValue().split("\n").findIndex(line => line.includes("25℃"));
+    const index = editor.getValue().split("\n").findIndex(line => line.includes("25°C"));
     const line = editor.getLine(index);
-    const offset = line.indexOf("25℃");
-    editor.replaceRange("30℃", { line: index, ch: offset }, { line: index, ch: offset + 3 });
+    const offset = line.indexOf("25°C");
+    editor.replaceRange("30°C", { line: index, ch: offset }, { line: index, ch: offset + "25°C".length });
     editor.setCursor({ line: editor.lineCount() - 1, ch: 0 });
   });
-  await page.waitForFunction(() => [...document.querySelectorAll(".markdown-source-view .ft-table td")].some(td => td.textContent === "30℃"));
+  await page.waitForFunction(() => [...document.querySelectorAll(".markdown-source-view .ft-table td")].some(td => td.textContent === "30°C"));
   assert.equal((await layout("live")).captionCount, 4);
 
   // Exercise the editor command and its boundary/undo behavior in the real editor.
   await page.evaluate(() => {
     const editor = app.workspace.activeLeaf.view.editor;
-    editor.setValue("前の本文\n![[example-apparatus.svg]]\n後の本文");
+    editor.setValue("Previous paragraph\n![[example-apparatus.svg]]\nFollowing paragraph");
     editor.setCursor({ line: 1, ch: 0 });
     app.commands.executeCommandById("figures-and-tables:insert-figure");
   });
   assert.equal(await page.evaluate(() => app.workspace.activeLeaf.view.editor.getValue()),
-    "前の本文\n\n> [!figure] キャプション\n> ![[example-apparatus.svg]]\n\n後の本文");
-  assert.equal(await page.evaluate(() => app.workspace.activeLeaf.view.editor.getSelection()), "キャプション");
+    "Previous paragraph\n\n> [!figure] Caption\n> ![[example-apparatus.svg]]\n\nFollowing paragraph");
+  assert.equal(await page.evaluate(() => app.workspace.activeLeaf.view.editor.getSelection()), "Caption");
   await page.evaluate(() => app.workspace.activeLeaf.view.editor.undo());
-  assert.equal(await page.evaluate(() => app.workspace.activeLeaf.view.editor.getValue()), "前の本文\n![[example-apparatus.svg]]\n後の本文");
+  assert.equal(await page.evaluate(() => app.workspace.activeLeaf.view.editor.getValue()), "Previous paragraph\n![[example-apparatus.svg]]\nFollowing paragraph");
 
   const plainTables = [
     "> [!grid|cols=2 lgap=16 vgap=16] ",
-    "> | 直径   | 許容電流 |",
+    "> | Diameter   | Ampacity |",
     "> | ------ | -------- |",
     "> | 1.6 mm | 27 A     |",
     "> | 2.0 mm | 35 A     |",
     "> | 2.6 mm | 48 A     |",
     "> | 3.2 mm | 62 A     |",
     ">",
-    ">| 断面積  | 許容電流 |",
+    ">| Area  | Ampacity |",
     ">| ------- | -------- |",
     ">| 2.0 mm² | 27 A     |",
     ">| 3.5 mm² | 37 A     |",
     ">| 5.5 mm² | 49 A     |",
     ">| 8.0 mm² | 61 A     |",
-    "", "編集位置",
+    "", "Editing position",
   ].join("\n");
   const mixed = [
     "> [!grid|cols=2 lgap=16 vgap=16]",
-    "> | 直径 | 許容電流 |",
+    "> | Diameter | Ampacity |",
     "> | --- | --- |",
     "> | 1.6 mm | 27 A |",
-    "> | 識別子 | ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 |",
+    "> | ID | ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 |",
     ">",
-    "> > [!table] キャプション付きの表",
-    "> > | 断面積 | 許容電流 |",
+    "> > [!table] Captioned table",
+    "> > | Area | Ampacity |",
     "> > | --- | --- |",
     "> > | 2.0 mm² | 27 A |",
     ">",
     "> ![[example-apparatus.svg]]",
     ">",
-    "> > [!figure] キャプション付きの図",
+    "> > [!figure] Captioned figure",
     "> > ![[example-results.svg]]",
     ">",
-    "> 説明文は1行全体に表示します。",
-    "", "編集位置",
+    "> Explanatory text occupies a full row.",
+    "", "Editing position",
   ].join("\n");
   const plainImages = [
     "> [!grid|cols=2]",
     "> ![[example-apparatus.svg]]",
     ">",
-    "> ![測定結果](example-results.svg)",
-    "", "編集位置",
+    "> ![Results](example-results.svg)",
+    "", "Editing position",
   ].join("\n");
   const centered = [
     "> [!grid|cols=2 lgap=32 vgap=48]",
@@ -244,28 +244,28 @@ try {
     "> | --- |",
     "> | 1 |",
     ">",
-    "> > [!table] 表B",
-    "> > | 長い見出しの列 | 測定値 |",
+    "> > [!table] Table B",
+    "> > | A longer column heading | Reading |",
     "> > | --- | --- |",
-    "> > | 温度 | 25℃ |",
+    "> > | Temperature | 25°C |",
     ">",
-    "> > [!table] 表C",
+    "> > [!table] Table C",
     "> > | A |",
     "> > | --- |",
     "> > | 2 |",
     ">",
-    "> | 長い見出しの列 | 測定値 |",
+    "> | A longer column heading | Reading |",
     "> | --- | --- |",
-    "> | 温度 | 30℃ |",
-    "", "編集位置",
+    "> | Temperature | 30°C |",
+    "", "Editing position",
   ].join("\n");
   const sizedImages = [
     "> [!grid|cols=2 lgap=20 vgap=0]",
     "> ![[example-apparatus.svg|120]]",
     ">",
-    "> > [!figure] 図B",
+    "> > [!figure] Figure B",
     "> > ![[example-results.svg|240]]",
-    "", "編集位置",
+    "", "Editing position",
   ].join("\n");
 
   async function inspectItems(mode) {
@@ -273,7 +273,7 @@ try {
       const root = document.querySelector(mode === "reading" ? ".markdown-preview-view" : ".markdown-source-view");
       const content = root.querySelector(".ft-grid > .callout-content");
       const items = [...content.querySelectorAll(":scope > :is(.ft-callout, .ft-grid-item)")];
-      const prose = [...content.querySelectorAll(":scope > p")].find(p => p.textContent.startsWith("説明文"));
+      const prose = [...content.querySelectorAll(":scope > p")].find(p => p.textContent.startsWith("Explanatory text"));
       return {
         items: items.map(element => {
           const { x, y, width, height } = element.getBoundingClientRect();
@@ -358,16 +358,16 @@ try {
   }
 
   // Compare against actual body tables/images, including a note-level theme override.
-  const bodyTable = "| 項目 | 値 |\n| --- | --- |\n| 温度 | 25℃ |";
+  const bodyTable = "| Item | Value |\n| --- | --- |\n| Temperature | 25°C |";
   const styled = [
     bodyTable, "",
-    "> [!table] 表A", ...bodyTable.split("\n").map(line => `> ${line}`), "",
+    "> [!table] Table A", ...bodyTable.split("\n").map(line => `> ${line}`), "",
     "> [!grid|cols=2 lgap=32 vgap=16]",
     ...bodyTable.split("\n").map(line => `> ${line}`), ">",
-    "> > [!table] 表B", ...bodyTable.split("\n").map(line => `> > ${line}`), "",
-    "> [!note] 通常のcallout", ...bodyTable.split("\n").map(line => `> ${line}`), "",
+    "> > [!table] Table B", ...bodyTable.split("\n").map(line => `> > ${line}`), "",
+    "> [!note] Regular callout", ...bodyTable.split("\n").map(line => `> ${line}`), "",
     "![[example-apparatus.svg|120]]", "",
-    "> [!figure] 図A", "> ![[example-apparatus.svg|120]]", "", "編集位置",
+    "> [!figure] Figure A", "> ![[example-apparatus.svg|120]]", "", "Editing position",
   ].join("\n");
   await page.setViewportSize({ width: 1280, height: 1600 });
   await page.evaluate(async source => {

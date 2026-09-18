@@ -55,14 +55,14 @@ function isolatedEdit(source: string, from: number, to: number, block: string, d
   };
 }
 
-const CAPTION = "キャプション";
+const CAPTION = "Caption";
 
 /** Operates on complete lines, including when selection ends at the next line's start. */
 export function wrapCaption(source: string, anchor: number, head: number, kind: "figure" | "table"): TextEdit {
   const { from, to, lines } = linesRange(source, anchor, head);
   const meaningful = lines.filter(line => readQuote(line).text.trim());
   if (kind === "table" && anchor === head && meaningful.length > 0) {
-    throw new Error("表全体を選択してください。空行で実行すると表のひな形を挿入します。");
+    throw new Error("Select the entire table. Run this command on an empty line to insert a table template.");
   }
   const depth = meaningful.length ? Math.min(...meaningful.map(line => readQuote(line).depth)) : readQuote(lines[0] ?? "").depth;
   const body = lines.map(line => {
@@ -71,9 +71,9 @@ export function wrapCaption(source: string, anchor: number, head: number, kind: 
     return rest;
   });
   if (body.some(line => /^\s*\[![^\]]+\]/.test(line))) {
-    throw new Error("既存のcallout全体ではなく、画像または表の本文を選択してください。");
+    throw new Error("Select the image or table content inside the existing callout.");
   }
-  const template = kind === "figure" ? ["![[画像.png]]"] : ["| 項目 | 値 |", "| --- | --- |", "| A | 1 |"];
+  const template = kind === "figure" ? ["![[image.png]]"] : ["| Item | Value |", "| --- | --- |", "| A | 1 |"];
   const header = quote(depth + 1, `[!${kind}] ${CAPTION}`);
   const content = meaningful.length ? body : template;
   const block = [header, ...content.map(line => quote(depth + 1, line))].join("\n");
@@ -87,17 +87,17 @@ export function wrapGrid(source: string, anchor: number, head: number, columns: 
   let children: string[];
   if (!first) {
     depth = readQuote(lines[0] ?? "").depth;
-    children = ["> [!figure] 図A", "> ![[画像A.png]]", "", "> [!figure] 図B", "> ![[画像B.png]]"];
+    children = ["> [!figure] Figure A", "> ![[image-a.png]]", "", "> [!figure] Figure B", "> ![[image-b.png]]"];
   } else {
     const firstQuote = readQuote(first);
     if (anchor === head || firstQuote.depth < 1 || !/^\[!(figure|table)(?:\|[^\]]*)?\]/i.test(firstQuote.text)) {
-      throw new Error("図・表のcallout全体を選択してください。空行で実行するとひな形を挿入します。");
+      throw new Error("Select complete figure or table callouts. Run this command on an empty line to insert a template.");
     }
     depth = firstQuote.depth - 1;
     children = lines.map(line => {
       const parsed = readQuote(line);
       if (parsed.text.trim() && parsed.depth <= depth) {
-        throw new Error("選択範囲にcalloutの外の本文が含まれています。図・表だけを選択してください。");
+        throw new Error("The selection includes text outside the callouts. Select only figures and tables.");
       }
       let rest = line;
       for (let i = 0; i < depth; i++) rest = rest.replace(/^ {0,3}>[ \t]?/, "");
@@ -118,7 +118,7 @@ export function isGridHeader(line: string): boolean {
 export function changeGridColumns(line: string, columns: number): string {
   const match = GRID_HEADER.exec(line);
   if (!match || !Number.isInteger(columns) || columns < 1 || columns > 6) {
-    throw new Error("グリッドの先頭行にカーソルを置いてください（列数は1〜6）。");
+    throw new Error("Place the cursor on the grid header and choose 1 to 6 columns.");
   }
   const [, prefix, metadata = "", folding, title] = match;
   const tokens = metadata.split(/\s+/).filter(token => token && !/^cols=/.test(token));

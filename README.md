@@ -1,133 +1,136 @@
 # Figures and Tables
 
-Obsidianのcalloutを使って、図・表にキャプションを付け、横並びやグリッドに配置するプラグインです。閲覧モードとLive Previewに対応します。元の画像リンクやMarkdown表をそのまま使います。
+An Obsidian plugin that adds captions to figures and tables and arranges them side by side or in grids using callouts. It supports Reading view and Live Preview while preserving your original image links and Markdown tables.
 
-現在はbeta版です。[GitHub Releases](https://github.com/m13yama/obsidian_figs_and_tabs/releases) からダウンロードできます。
+The plugin is currently in beta. Download it from [GitHub Releases](https://github.com/m13yama/obsidian_figs_and_tabs/releases).
 
-0.2.0ではキャプションなしの図表・混在、内容幅での中央寄せ、縦横それぞれの間隔指定に対応しました。0.1.0から更新する場合、ノートの旧 `gap=16` は `lgap=16 vgap=16` に書き換えてください。保存済みの旧 `gap` 設定も引き継ぎません。
+Version 0.2.0 adds captionless and mixed content, centered grids with columns sized to their content, and separate horizontal and vertical spacing. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
 
-## インストール
+## Installation
 
-1. [0.2.0（beta）のリリースページ](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.2.0) のAssetsから `figures-and-tables-0.2.0.zip` をダウンロードして展開します。
-2. 展開された `figures-and-tables` フォルダを、利用するVaultの `.obsidian/plugins/` にコピーします。
-3. Obsidianの「設定 → コミュニティプラグイン」で **Figures and Tables** を有効にします。必要に応じてObsidianを再読み込みしてください。
+1. Download `figures-and-tables-0.2.0.zip` from the Assets section of the [0.2.0 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.2.0) and extract it.
+2. Copy the extracted `figures-and-tables` folder into your vault's `.obsidian/plugins/` directory.
+3. In Obsidian, open **Settings → Community plugins** and enable **Figures and Tables**. Reload Obsidian if needed.
 
-インストールに必要なのは `main.js`・`manifest.json`・`styles.css` の3ファイルです。Assetsから個別にダウンロードし、`.obsidian/plugins/figures-and-tables/` に配置することもできます。ソースコードや `node_modules` は不要です。GitHubが自動生成する「Source code」のZIPはインストール用ではありません。
+Only `main.js`, `manifest.json`, and `styles.css` are required. You can also download these files individually from the release assets and place them in `.obsidian/plugins/figures-and-tables/`. Source files and `node_modules` are not needed. GitHub's automatically generated "Source code" ZIP is not an installable plugin package.
 
-## 図と表
+## Figures and tables
 
 ```markdown
-> [!figure] 実験装置の全体像
+> [!figure] Overview of the experimental apparatus
 > ![[apparatus.png]]
 
-> [!table] 各手法の精度
-> | 手法 | 精度 |
+> [!table] Accuracy by method
+> | Method | Accuracy |
 > | --- | ---: |
 > | A | 92.1% |
 > | B | 95.3% |
 ```
 
-図のキャプションは下、表のキャプションは上に、どちらも中央揃えで表示します。キャプションにはObsidianがcalloutのタイトルで扱える太字、リンク、インライン数式を記述できます。画像は `![代替テキスト](images/apparatus.png)` でも記述できます。代替テキストとキャプションは別々に指定できます。
+Figure captions appear below the content and table captions above it. Both are centered. Captions support the formatting Obsidian allows in callout titles, including bold text, links, and inline math. Images can also use standard Markdown syntax: `![Alt text](images/apparatus.png)`. Alt text and captions are independent.
 
-calloutの背景・枠・アイコン・本文への着色を取り除き、表の罫線も本文の設定を引き継ぎます。図表の中身には本文と同じテーマのスタイルを使います。
+The plugin removes callout backgrounds, borders, icons, and text tinting. Table borders inherit the note's settings, and figures and tables use the same theme styles as the rest of the note.
 
-位置を個別に変える場合は `[!figure|caption=top]` または `[!table|caption=bottom]` と書きます。設定画面では図と表それぞれの既定位置を変更できます。
+Use `[!figure|caption=top]` or `[!table|caption=bottom]` to override the caption position for an individual item. You can change the default position for figures and tables separately in the plugin settings.
 
-## グリッド
+## Grids
 
 ```markdown
 > [!grid|cols=2 lgap=16 vgap=16]
-> > [!figure] 実験装置
+> > [!figure] Experimental apparatus
 > > ![[apparatus.png]]
 >
-> > [!table] 測定条件
-> > | 項目 | 値 |
+> > [!table] Measurement conditions
+> > | Item | Value |
 > > | --- | --- |
-> > | 温度 | 25℃ |
+> > | Temperature | 25°C |
 >
-> > [!figure|span=2] 時間と測定値の関係
+> > [!figure|span=2] Reading over time
 > > ![[results.png]]
 
-ここからはグリッドの外の本文です。
+This paragraph is outside the grid.
 ```
 
-上段に図と表、下段に2列分の図を配置します。`span` を指定せず図表を4つ入れると2×2になります。順序はMarkdownの記述順です。グリッドの直接の子に当たる図・表を配置し、それ以外の本文は1行全体を使って表示します。
+This places a figure and a table in the first row, followed by a figure spanning both columns. Four items without `span` form a 2×2 grid. Items follow their order in the Markdown source. Figures and tables that are direct children of the grid occupy cells; other content occupies a full row.
 
-### キャプションなしの図表と混在
+### Captionless and mixed content
 
-キャプションが不要な表は、`[!table]` で囲まずに `grid` の中に書けます。キャプション付きの表や画像と混在させても、記述順に横並びになります。
+Tables without captions can be written directly inside a `grid`, without a `table` callout. They can be mixed with captioned tables and images, in source order.
 
 ```markdown
 > [!grid|cols=2 lgap=16 vgap=16]
-> | 直径 | 許容電流 |
+> | Diameter | Ampacity |
 > | --- | --- |
 > | 1.6 mm | 27 A |
 > | 2.0 mm | 35 A |
 >
-> > [!table] 断面積と許容電流
-> > | 断面積 | 許容電流 |
+> > [!table] Cross-sectional area and ampacity
+> > | Area | Ampacity |
 > > | --- | --- |
 > > | 2.0 mm² | 27 A |
 > > | 3.5 mm² | 37 A |
 >
 > ![[apparatus.png]]
 >
-> > [!figure] 測定結果
+> > [!figure] Measurement results
 > > ![[results.png]]
 ```
 
-この例では上段にキャプションなしの表とキャプション付きの表、下段にキャプションなしの画像とキャプション付きの図を配置します。
+The first row contains a captionless table and a captioned table. The second contains a captionless image and a captioned figure.
 
-表どうし、画像どうしは `>` だけの空行で区切ります。画像だけの段落は1項目です。同じ段落に複数の画像を書くと同じ項目にまとまります。画像と説明文が同じ段落にある場合は通常の本文として1行全体に表示します。キャプションなしの図表は各1列を使用し、列またぎには `figure` / `table` calloutの `span` を使います。
+Separate tables or images with a line containing only `>`. A paragraph containing only images is one grid item: multiple images in the same paragraph remain together. A paragraph containing both text and images is treated as ordinary content and occupies a full row. Captionless items each use one column. To span columns, use a `figure` or `table` callout with `span`.
 
-### 配置オプション
+### Layout options
 
-| オプション | 対象 | 値 | 省略時 |
+| Option | Applies to | Values | Default |
 | --- | --- | --- | --- |
-| `cols=2` | grid | 1〜6の整数 | 設定画面の列数（初期値2） |
-| `lgap=16` | grid | 横方向の間隔。0〜96の整数、単位はpx | 設定画面の横方向の間隔（初期値16） |
-| `vgap=16` | grid | 縦方向の間隔。0〜96の整数、単位はpx | 設定画面の縦方向の間隔（初期値16） |
-| `span=2` | figure / table | 1〜6の整数 | 1列。親の列数を超えた分は切り詰める |
-| `caption=bottom` | figure / table | `top` / `bottom` | 設定画面の位置 |
+| `cols=2` | grid | Integer from 1 to 6 | Default columns setting (initially 2) |
+| `lgap=16` | grid | Horizontal spacing in pixels, integer from 0 to 96 | Default horizontal spacing setting (initially 16) |
+| `vgap=16` | grid | Vertical spacing in pixels, integer from 0 to 96 | Default vertical spacing setting (initially 16) |
+| `span=2` | figure / table | Integer from 1 to 6 | 1 column; values above the parent grid's column count are clamped |
+| `caption=bottom` | figure / table | `top` or `bottom` | Caption position setting |
 
-オプションは半角空白で区切ります。不明なオプションや不正な値は無視し、本文の表示は継続します。同じ有効なオプションが複数ある場合は最後の指定を使います。
+Separate options with spaces. Unknown options and invalid values are ignored without preventing the content from rendering. If the same option appears more than once, the last valid value is used.
 
-各列はその列の図表やキャプションに必要な幅を使い、グリッド全体を中央寄せにします。横の列間隔は `lgap`、縦の行間隔は `vgap` で独立して指定します。例えば `[!grid|cols=2 lgap=32 vgap=24]` は横32px、縦24pxです。
+Each column uses the width required by its content and captions, and the grid as a whole is centered. Horizontal spacing (`lgap`) and vertical spacing (`vgap`) are independent. For example, `[!grid|cols=2 lgap=32 vgap=24]` sets 32px between columns and 24px between rows.
 
-狭い画面でも指定した列数と列またぎを維持します。ペインに収まらない場合は左端から表示し、グリッド全体を横スクロールできます。画像は縦横比を維持し、必要なら `![[画像.png|300]]` のようにObsidianの画像幅指定を使えます。
+Narrow panes retain the configured columns and spans. When the grid does not fit, it starts at the left edge and scrolls horizontally. Images preserve their aspect ratio. Use Obsidian's image width syntax, such as `![[image.png|300]]`, to set a width explicitly.
 
-旧 `gap` は廃止しました。旧形式や保存済みの `gap` 設定は引き継ぎません。ノートには `lgap` と `vgap` を指定してください。
+The old `gap` option has been removed. Neither the old syntax nor the saved `gap` setting is migrated. Use `lgap` and `vgap` in your notes.
 
-### グリッドの終わり
+### Where a grid ends
 
-- `>` だけの行は、外側のgridを継続し、内側の図表を区切ります。
-- `>` もない完全な空行を挟み、次の本文やcalloutを書けばグリッドの外になります。
-- 本文へ戻る際に `>` を省略するだけでは、Markdownの段落継続として引用内に残る場合があります。空行を入れてください。
+- A line containing only `>` continues the outer grid and separates its child items.
+- A completely blank line, without `>`, followed by ordinary text or another callout ends the grid.
+- Simply omitting `>` may leave text inside the quotation because Markdown allows paragraph continuation. Insert a blank line when returning to ordinary text.
 
-プラグインはObsidianが解釈したcalloutの範囲を使います。独自の終了タグはありません。プラグインを無効にすると、図・表・説明は通常のcalloutとして残ります。
+The plugin uses the callout boundaries parsed by Obsidian. There is no custom closing tag. Disabling the plugin leaves the figures, tables, and descriptions as ordinary callouts.
 
-## 編集コマンド
+## Editing commands
 
-コマンドパレットで `Figures and Tables` を検索してください。必要ならObsidianのホットキー設定から割り当てられます。
+Search for `Figures and Tables` in the command palette. You can assign shortcuts in Obsidian's Hotkeys settings.
 
-| コマンド | 操作 |
+| Command | Behavior |
 | --- | --- |
-| 選択範囲を図にする / 図を挿入 | 選択した行、またはカーソル行をfigureで囲む。空行では画像のひな形を挿入 |
-| 選択範囲を表にする / 表を挿入 | ヘッダー・区切り行を含め表全体を選択して実行。空行では表のひな形を挿入 |
-| 選択した図表をグリッドにする / グリッドを挿入 | figure / tableのcallout全体を選択して実行。空行では図2つのひな形を挿入 |
-| グリッドの列数を変更（先頭行） | `[!grid]` の行にカーソルを置き、1〜6列から選択 |
+| Insert figure / wrap selection | Wrap selected lines, or the current line, in a figure callout. On an empty line, insert an image template. |
+| Insert table / wrap selection | Wrap a complete selected table, including its header and separator row. On an empty line, insert a table template. |
+| Insert grid / wrap selected figures and tables | Wrap complete selected figure/table callouts in a grid. On an empty line, insert a template with two figures. |
+| Change grid columns (from the header) | Place the cursor on the `[!grid]` header and choose 1 to 6 columns. |
 
-図・表の作成後は「キャプション」が選択されるので、そのまま入力して置き換えられます。変換は行単位で行い、1回のUndoで戻せます。複数の図表をグリッドにする場合、各callout内の行には `>` を記述してください。
+After creating a figure or table, the `Caption` placeholder is selected so you can replace it immediately. Commands operate on complete lines and can be reverted with one Undo. When wrapping multiple callouts in a grid, include `>` on every line inside each callout.
 
-Live PreviewではObsidian標準のcalloutの表示と編集操作を使います。内容を編集する際はcalloutの編集ボタンからMarkdownを表示できます。プラグイン独自の表セルエディターは提供しません。
+Live Preview uses Obsidian's native callout rendering and editing controls. Use the callout's edit button to reveal its Markdown. The plugin does not provide a separate table cell editor.
 
-## サンプル
+## Examples
 
-`examples/` のMarkdownノートと2つのSVGをVaultにコピーしてください。単独の図表、キャプションあり・なしの混在、列またぎ、2×2、キャプション位置、不正な値のフォールバックを試せます。
+Copy the Markdown notes and both SVG files from `examples/` into the same vault:
 
-## 開発と検証
+- [Figures and grids](examples/figures-and-grids.md): standalone figures and tables, column spans, a 2×2 grid, caption positions, and invalid option fallbacks.
+- [Captionless and mixed content](examples/captionless-and-mixed.md): captionless tables and images, mixed captions, independent spacing, and image widths.
 
-Node.js 22.13以降を推奨します。ソースからビルドする場合は次を実行し、生成された `dist/figures-and-tables` フォルダをVaultの `.obsidian/plugins/` にコピーしてください。
+## Development and verification
+
+Use Node.js 22.13 or later. To build from source, run the following commands, then copy the generated `dist/figures-and-tables` folder into your vault's `.obsidian/plugins/` directory.
 
 ```sh
 npm ci
@@ -135,32 +138,32 @@ npm test
 npm run build
 ```
 
-`npm run dev` は `main.js` を監視ビルドします。配布用の `dist/` は `npm run build` で更新されます。
+`npm run dev` watches the source and rebuilds `main.js`. `npm run build` updates the distribution files in `dist/`.
 
-実際のObsidianを使う検証も用意しています。
+An integration test runs against the actual Obsidian application:
 
 ```sh
 npm run build
 npm run test:obsidian
 ```
 
-Linuxでは `/opt/Obsidian/obsidian` を起動します。別のインストール先では `OBSIDIAN_BIN` に実行ファイルを指定してください。画面を表示できるデスクトップ環境が必要です。テストは一時ディレクトリに専用プロファイルとVaultを作成し、終了時に起動したObsidianを閉じます。既存のVaultは使いません。スクリーンショットは `test-results/` に出力します。
+On Linux, the test launches `/opt/Obsidian/obsidian`. Set `OBSIDIAN_BIN` to use a different executable. A desktop session is required. The test creates a dedicated profile and vault in a temporary directory, then closes the Obsidian process it started. It does not use your existing vault. Screenshots are written to `test-results/`.
 
-### 実装
+### Implementation
 
-- `src/options.ts`: 設定とcalloutオプションの検証。
-- `src/render.ts`: 既存DOMへの装飾、キャプションのアクセシビリティ上の関連付け、変更監視と解除。
-- `src/editor.ts`: CodeMirror 6拡張。Live Previewの標準calloutを監視し、表示を更新。
-- `src/commands.ts`: 行単位のMarkdown変換。引用の深さと前後の区切りを保持。
-- `src/main.ts`: プラグイン登録、閲覧モードのpost processor、コマンド、設定画面。
-- `styles.css`: CSS Grid、キャプション配置、狭いペイン・印刷向けのスタイル。
+- `src/options.ts`: settings and callout option validation.
+- `src/render.ts`: decoration of existing DOM nodes, accessible caption associations, change observation, and cleanup.
+- `src/editor.ts`: a CodeMirror 6 extension that watches native Live Preview callouts and updates their presentation.
+- `src/commands.ts`: line-based Markdown transformations that preserve quotation depth and surrounding boundaries.
+- `src/main.ts`: plugin registration, the Reading view post processor, commands, and settings.
+- `styles.css`: CSS Grid layout, caption placement, and styles for narrow panes and printing.
 
-表示処理では元のノートを書き換えません。画像・表・リンクのDOMやイベントハンドラーを維持し、属性とスタイルを追加します。監視は各描画セクションとエディター内に限定し、プラグイン自身が追加する属性を再監視しないことで更新ループを防ぎます。無効化時には追加した装飾を解除します。
+Rendering does not rewrite note content. The plugin adds attributes and styles while preserving image, table, and link nodes and their event handlers. Observation is limited to rendered sections and editor content. Attributes added by the plugin are excluded from observation to avoid update loops. Disabling the plugin removes its decorations.
 
-### 現時点の範囲
+### Current scope
 
-Obsidian 1.12.7 / Linux / 標準テーマで、閲覧モード・Live Preview、キャプションなしの図表と混在、内容幅での中央寄せ、縦横の間隔、グリッドの終了境界、キャプション位置、列またぎ、狭いペインでの横スクロール、画像幅の指定、幅の広い表、表の内容変更、作成コマンドとUndo、無効化・再有効化を検証済みです。本文と図表のスタイルはライト・ダーク表示と罫線色のカスタマイズでも比較しています。構文・編集変換・表示ライフサイクルの自動テスト27件も通過しています。
+Verified with Obsidian 1.12.7 on Linux using the default theme: Reading view and Live Preview, captionless and mixed content, centered grids sized to their content, independent spacing, grid boundaries, caption positions, spans, horizontal scrolling in narrow panes, explicit image widths, wide tables, table edits, commands and Undo, and disabling/re-enabling the plugin. Figure and table styles are compared with ordinary note content in light and dark modes and with customized table border colors. All 27 unit tests for options, editing transformations, and the rendering lifecycle pass.
 
-図・表のキャプション、グリッド、列またぎ、配置の設定、編集コマンドを実装しています。自動採番、相互参照、サブ図の(a)(b)、Vault全体の図表一覧は未実装です。PDF出力用CSSはありますが、PDF書き出し、モバイル実機、各種コミュニティテーマでの表示は別途確認が必要です。
+Implemented features include captions, grids, column spans, layout settings, and editing commands. Automatic numbering, cross-references, subfigure labels such as (a)/(b), and vault-wide lists of figures and tables are not implemented. Print CSS is included, but PDF export, physical mobile devices, and community themes still need verification.
 
-構文の土台は [Obsidianのcallout](https://obsidian.md/help/callouts)、表示の拡張は [Obsidianの公開API](https://github.com/obsidianmd/obsidian-api) を使用しています。
+The syntax builds on [Obsidian callouts](https://obsidian.md/help/callouts), and rendering is extended through the [Obsidian public API](https://github.com/obsidianmd/obsidian-api).

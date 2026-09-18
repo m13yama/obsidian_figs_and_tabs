@@ -1,0 +1,128 @@
+/* Only callouts claimed by this plugin are styled. Native content stays intact. */
+.callout.ft-callout {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  min-width: 0;
+  mix-blend-mode: normal;
+}
+
+.ft-callout > .callout-title {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--text-muted);
+  font-size: var(--font-small);
+  font-weight: var(--font-normal);
+  line-height: 1.5;
+}
+
+.ft-callout > .callout-title > .callout-icon {
+  display: none;
+}
+
+.ft-callout > .callout-title > .callout-title-inner {
+  min-width: 0;
+  font-weight: var(--font-normal);
+  overflow-wrap: anywhere;
+}
+
+.ft-callout > .callout-content {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  background: transparent;
+}
+
+.ft-figure,
+.ft-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  break-inside: avoid;
+}
+
+.ft-figure[data-ft-caption="bottom"] > .callout-title,
+.ft-table[data-ft-caption="bottom"] > .callout-title {
+  order: 1;
+}
+
+.ft-figure > .callout-title,
+.ft-table > .callout-title {
+  justify-content: center;
+  text-align: center;
+}
+
+.ft-figure > .callout-content > :first-child,
+.ft-table > .callout-content > :first-child {
+  margin-top: 0;
+}
+
+.ft-figure > .callout-content > :last-child,
+.ft-table > .callout-content > :last-child {
+  margin-bottom: 0;
+}
+
+.ft-figure > .callout-content {
+  text-align: center;
+}
+
+.ft-figure > .callout-content img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.ft-figure > .callout-content .image-embed {
+  max-width: 100%;
+}
+
+.ft-table > .callout-content {
+  overflow-x: auto;
+}
+
+.ft-table > .callout-content table {
+  margin-block: 0;
+}
+
+.ft-grid:not(.is-collapsible) > .callout-title {
+  display: none;
+}
+
+.ft-grid > .callout-content {
+  display: grid;
+  /* Keep every column readable; excess width scrolls inside the grid. */
+  grid-template-columns: repeat(var(--ft-columns, 2), minmax(240px, 1fr));
+  gap: var(--ft-gap, 16px);
+  align-items: start;
+  overflow-x: auto;
+}
+
+.ft-grid > .callout-content > .ft-callout {
+  grid-column: span var(--ft-span, 1);
+  margin: 0;
+  min-width: 0;
+}
+
+/* Ordinary content is kept visible and occupies a full row. */
+.ft-grid > .callout-content > :not(.ft-callout) {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+@media print {
+  .ft-grid {
+    overflow: visible;
+  }
+
+  .ft-grid > .callout-content {
+    grid-template-columns: repeat(var(--ft-columns, 2), minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .ft-table > .callout-content {
+    overflow: visible;
+  }
+}

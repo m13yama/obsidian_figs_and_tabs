@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" role="img" aria-labelledby="title desc">
+  <title id="title">時間と測定値の関係</title>
+  <desc id="desc">時間の経過に伴い測定値が増加し、一定値に近づく模式図。実測データではありません。</desc>
+  <rect width="800" height="320" rx="16" fill="#f0f4fa"/>
+  <g stroke="#d4deea"><path d="M80 80h670M80 140h670M80 200h670"/></g>
+  <path d="M80 45v215h670" fill="none" stroke="#476582" stroke-width="2"/>
+  <path d="M95 238C160 235 195 218 260 168S370 78 475 69 620 64 740 60" fill="none" stroke="#327eb6" stroke-width="4"/>
+  <g fill="#24394d" font-family="sans-serif" font-size="18"><text x="382" y="298">時間</text><text transform="translate(32 178) rotate(-90)">測定値</text><text x="595" y="38" font-size="14">模式図（実測値ではない）</text></g>
+</svg>

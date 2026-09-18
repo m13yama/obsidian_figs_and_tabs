@@ -1,0 +1,27 @@
+{
+  "name": "figures-and-tables",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Captions and responsive grids for figures and tables in Obsidian.",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "npm run typecheck && node esbuild.config.mjs production",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:obsidian": "node tests/obsidian.mjs"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@codemirror/state": "6.5.0",
+    "@codemirror/view": "6.38.6",
+    "@types/node": "22.19.21",
+    "esbuild": "0.28.1",
+    "jsdom": "29.1.1",
+    "obsidian": "1.13.1",
+    "playwright": "1.61.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.9"
+  }
+}

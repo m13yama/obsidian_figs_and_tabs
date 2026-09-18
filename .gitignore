@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Generated plugin bundles
+/main.js
+/main.js.map
+/dist/
+*.tsbuildinfo
+
+# Test artifacts
+/test-results/
+/playwright-report/
+/coverage/
+
+# Local Obsidian configuration and plugin settings
+/.obsidian/
+/data.json
+
+# Local environment files and logs
+.env
+.env.*
+!.env.example
+*.log
+
+# Operating system files
+.DS_Store
+Thumbs.db

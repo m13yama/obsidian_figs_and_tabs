@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 280" role="img" aria-labelledby="title desc">
+  <title id="title">実験装置の構成</title>
+  <desc id="desc">試料から検出器、記録装置の順に信号が流れる模式図</desc>
+  <rect width="640" height="280" rx="16" fill="#f0f4fa"/>
+  <g stroke="#476582" stroke-width="3" fill="none"><path d="M195 140h60m-12-9 12 9-12 9M395 140h50m-12-9 12 9-12 9"/></g>
+  <g fill="#fff" stroke="#476582" stroke-width="2"><rect x="35" y="85" width="160" height="110" rx="12"/><rect x="255" y="85" width="140" height="110" rx="12"/><rect x="445" y="85" width="160" height="110" rx="12"/></g>
+  <g fill="#24394d" font-family="sans-serif" font-size="22" text-anchor="middle"><text x="115" y="148">試料</text><text x="325" y="148">検出器</text><text x="525" y="148">記録装置</text></g>
+</svg>

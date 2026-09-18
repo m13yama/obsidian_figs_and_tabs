@@ -2,13 +2,15 @@
 
 Obsidianのcalloutを使って、図・表にキャプションを付け、横並びやグリッドに配置するプラグインです。閲覧モードとLive Previewに対応します。元の画像リンクやMarkdown表をそのまま使います。
 
+現在はbeta版です。[GitHub Releases](https://github.com/m13yama/obsidian_figs_and_tabs/releases) からダウンロードできます。
+
 ## インストール
 
-1. 開発環境では `npm ci`、`npm run build` を実行します（Node.js 22.13以降を推奨）。
-2. 生成された `dist/figures-and-tables` フォルダを、利用するVaultの `.obsidian/plugins/` にコピーします。
+1. [0.1.0（beta）のリリースページ](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.1.0) のAssetsから `figures-and-tables-0.1.0.zip` をダウンロードして展開します。
+2. 展開された `figures-and-tables` フォルダを、利用するVaultの `.obsidian/plugins/` にコピーします。
 3. Obsidianの「設定 → コミュニティプラグイン」で **Figures and Tables** を有効にします。必要に応じてObsidianを再読み込みしてください。
 
-インストールに必要なのは `main.js`・`manifest.json`・`styles.css` の3ファイルです。ソースコードや `node_modules` は不要です。
+インストールに必要なのは `main.js`・`manifest.json`・`styles.css` の3ファイルです。Assetsから個別にダウンロードし、`.obsidian/plugins/figures-and-tables/` に配置することもできます。ソースコードや `node_modules` は不要です。GitHubが自動生成する「Source code」のZIPはインストール用ではありません。
 
 ## 図と表
 
@@ -86,6 +88,8 @@ Live PreviewではObsidian標準のcalloutの表示と編集操作を使いま�
 `examples/` のMarkdownノートと2つのSVGをVaultにコピーしてください。単独の図表、混在グリッド、列またぎ、2×2、キャプション位置、不正な値のフォールバックを試せます。
 
 ## 開発と検証
+
+Node.js 22.13以降を推奨します。ソースからビルドする場合は次を実行し、生成された `dist/figures-and-tables` フォルダをVaultの `.obsidian/plugins/` にコピーしてください。
 
 ```sh
 npm ci

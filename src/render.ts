@@ -4,6 +4,23 @@ import type { Settings } from "./options";
 const CALLOUT = '.callout[data-callout="figure"], .callout[data-callout="table"], .callout[data-callout="grid"]';
 let nextCaptionId = 0;
 
+/** Image-only paragraphs are one item; prose with an inline image remains prose. */
+function containsOnlyImages(node: Node): boolean {
+  if (node.nodeType === 3) return !node.textContent?.trim();
+  if (node.nodeType === 8) return true;
+  if (node.nodeType !== 1) return false;
+  const element = node as Element;
+  if (element.matches("img, .image-embed, br")) return true;
+  return element.matches("p, a, span") && Array.from(element.childNodes).every(containsOnlyImages);
+}
+
+function plainGridItemKind(element: Element): "table" | "figure" | null {
+  if (element.matches("table")) return "table";
+  if (element.matches("div.table-wrapper, div.el-table") && element.querySelector(":scope > table")) return "table";
+  const hasImage = element.matches("img, .image-embed") || element.querySelector("img, .image-embed") !== null;
+  return hasImage && containsOnlyImages(element) ? "figure" : null;
+}
+
 /** Restore only values that still belong to us, preserving changes by other plugins. */
 class Patch {
   private undo: Array<() => void> = [];
@@ -121,7 +138,24 @@ export class CalloutRenderer {
 
     if (kind === "grid") {
       patch.style(element, "--ft-columns", String(options.columns));
-      patch.style(element, "--ft-gap", `${options.gap}px`);
+      patch.style(element, "--ft-lgap", `${options.lgap}px`);
+      patch.style(element, "--ft-vgap", `${options.vgap}px`);
+      const content = element.querySelector(":scope > .callout-content");
+      for (const child of Array.from(content?.children ?? [])) {
+        const itemKind = plainGridItemKind(child);
+        if (itemKind) {
+          patch.className(child, "ft-grid-item");
+          patch.className(child, `ft-grid-${itemKind}`);
+        }
+        if (itemKind === "figure" || child.matches('.callout[data-callout="figure"]')) {
+          const body = child.querySelector(":scope > .callout-content") ?? child;
+          const images = body.matches("img") ? [body as HTMLImageElement] : body.querySelectorAll<HTMLImageElement>("img");
+          for (const image of images) {
+            // SVGs with only a viewBox otherwise contribute zero to max-content tracks.
+            if (image.naturalWidth > 0) patch.style(image, "--ft-image-width", `${image.naturalWidth}px`);
+          }
+        }
+      }
       return;
     }
 
@@ -160,14 +194,19 @@ export class CalloutController {
   private observer: MutationObserver;
   private queued = false;
   private destroyed = false;
+  private readonly onImageLoad = (event: Event): void => {
+    if ((event.target as Element | null)?.tagName === "IMG") this.schedule();
+  };
 
   constructor(private readonly root: HTMLElement, private readonly renderer: CalloutRenderer) {
     const Observer = root.ownerDocument.defaultView?.MutationObserver ?? MutationObserver;
     this.observer = new Observer(() => this.schedule());
+    root.addEventListener("load", this.onImageLoad, true);
     // Native widgets may finish rendering later or be recycled on edit/scroll.
     // Our own classes, styles and ARIA attributes deliberately aren't observed.
     this.observer.observe(root, {
       childList: true,
+      characterData: true,
       subtree: true,
       attributes: true,
       attributeFilter: ["data-callout", "data-callout-metadata"],
@@ -191,6 +230,7 @@ export class CalloutController {
     if (this.destroyed) return;
     this.destroyed = true;
     this.observer.disconnect();
+    this.root.removeEventListener("load", this.onImageLoad, true);
     for (const element of this.elements) this.renderer.release(element, this);
     this.elements.clear();
     this.renderer.forget(this);

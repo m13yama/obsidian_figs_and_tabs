@@ -80,7 +80,7 @@ export function wrapCaption(source: string, anchor: number, head: number, kind: 
   return isolatedEdit(source, from, to, block, depth, header.indexOf(CAPTION), CAPTION.length);
 }
 
-export function wrapGrid(source: string, anchor: number, head: number, columns: number, gap: number): TextEdit {
+export function wrapGrid(source: string, anchor: number, head: number, columns: number, lgap: number, vgap: number): TextEdit {
   const { from, to, lines } = linesRange(source, anchor, head);
   const first = lines.find(line => readQuote(line).text.trim()) ?? "";
   let depth: number;
@@ -104,7 +104,7 @@ export function wrapGrid(source: string, anchor: number, head: number, columns: 
       return rest;
     });
   }
-  const header = quote(depth + 1, `[!grid|cols=${columns} gap=${gap}]`);
+  const header = quote(depth + 1, `[!grid|cols=${columns} lgap=${lgap} vgap=${vgap}]`);
   const block = [header, ...children.map(line => quote(depth + 1, line))].join("\n");
   return isolatedEdit(source, from, to, block, depth, header.length, 0);
 }

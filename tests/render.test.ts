@@ -28,7 +28,7 @@ describe("native callout decoration", () => {
   it("keeps image/link/table nodes and handlers intact while associating captions", () => {
     const { root, controller } = setup(callout("grid", "Grid",
       callout("figure", "図 <strong>A</strong>", '<p><a href="#note"><img src="a.png"></a></p>') +
-      callout("table", "表 B", '<table><tbody><tr><td>42</td></tr></tbody></table>'), "cols=2 gap=24"));
+      callout("table", "表 B", '<table><tbody><tr><td>42</td></tr></tbody></table>'), "cols=2 lgap=24 vgap=24"));
     const image = root.querySelector("img");
     const cell = root.querySelector("td");
     let clicked = false;
@@ -51,6 +51,57 @@ describe("native callout decoration", () => {
     expect(root.querySelector('[data-callout="note"]')?.className).toBe("callout");
   });
 
+  it("mixes bare tables and image paragraphs with captioned callouts without touching prose", () => {
+    const { root, controller } = setup(callout("grid", "Grid",
+      '<table><tbody><tr><td>27 A</td></tr></tbody></table>' +
+      callout("table", "キャプション", '<table><tr><td>35 A</td></tr></table>') +
+      '<p><a href="note"><img src="a.png"></a></p>' +
+      '<p>説明文 <img src="inline.png"></p>' +
+      '<ul><li><img src="list.png"></li></ul>' +
+      callout("note", "Note", '<table><tr><td>Other</td></tr></table>')));
+    const content = root.querySelector(".ft-grid > .callout-content")!;
+    const table = content.firstElementChild!;
+    const image = content.querySelector("p img");
+    controller.refresh();
+    expect(table.classList.contains("ft-grid-table")).toBe(true);
+    expect(content.querySelectorAll(":scope > .ft-grid-item")).toHaveLength(2);
+    expect(content.querySelectorAll(".ft-grid-table")).toHaveLength(1);
+    expect(table.hasAttribute("aria-labelledby")).toBe(false);
+    expect(content.querySelector(".ft-table table")?.hasAttribute("aria-labelledby")).toBe(true);
+    expect(content.querySelector("p img")).toBe(image);
+    expect(content.querySelectorAll("p")[1]?.className).toBe("");
+    expect(content.querySelector("ul")?.className).toBe("");
+  });
+
+  it("recognizes native table wrappers and wiki image embeds, and restores all classes on unload", () => {
+    const { root, renderer } = setup(callout("grid", "Grid",
+      '<div class="table-wrapper"><table><tr><td>27 A</td></tr></table></div>' +
+      '<p><span class="internal-embed image-embed"><img src="a.svg"></span></p>'));
+    const wrapper = root.querySelector(".table-wrapper")!;
+    const image = root.querySelector("p")!;
+    expect(wrapper.classList.contains("ft-grid-table")).toBe(true);
+    expect(image.classList.contains("ft-grid-figure")).toBe(true);
+    renderer.destroy();
+    expect(wrapper.className).toBe("table-wrapper");
+    expect(image.className).toBe("");
+    expect(root.querySelectorAll('[class*="ft-grid"]')).toHaveLength(0);
+  });
+
+  it("updates bare items after async rendering and image-only paragraphs becoming prose", async () => {
+    const { root } = setup(callout("grid", "Grid", '<p><img src="a.svg"> </p>'));
+    const content = root.querySelector(".callout-content")!;
+    const paragraph = content.querySelector("p")!;
+    expect(paragraph.classList.contains("ft-grid-figure")).toBe(true);
+    paragraph.lastChild!.textContent = "説明文";
+    content.insertAdjacentHTML("beforeend", "<table><tr><td>27 A</td></tr></table>");
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(paragraph.classList.contains("ft-grid-item")).toBe(false);
+    expect(content.querySelector("table")?.classList.contains("ft-grid-table")).toBe(true);
+    root.firstElementChild!.setAttribute("data-callout", "note");
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(content.querySelector(".ft-grid-item")).toBeNull();
+  });
+
   it("applies edited metadata and settings without rebuilding content", async () => {
     const { root, settings, renderer } = setup(callout("figure", "A", "image"));
     const figure = root.firstElementChild!;
@@ -61,6 +112,41 @@ describe("native callout decoration", () => {
     figure.setAttribute("data-callout-metadata", "caption=bottom");
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(figure.getAttribute("data-ft-caption")).toBe("bottom");
+  });
+
+  it("updates horizontal and vertical gaps independently and restores styles on unload", async () => {
+    const { root, settings, renderer } = setup(callout("grid", "Grid", "", "lgap=24 vgap=8"));
+    const grid = root.firstElementChild as HTMLElement;
+    expect(grid.style.getPropertyValue("--ft-lgap")).toBe("24px");
+    expect(grid.style.getPropertyValue("--ft-vgap")).toBe("8px");
+    settings.lgap = 32;
+    settings.vgap = 48;
+    grid.setAttribute("data-callout-metadata", "lgap=0");
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(grid.style.getPropertyValue("--ft-lgap")).toBe("0px");
+    expect(grid.style.getPropertyValue("--ft-vgap")).toBe("48px");
+    renderer.destroy();
+    expect(grid.style.getPropertyValue("--ft-lgap")).toBe("");
+    expect(grid.style.getPropertyValue("--ft-vgap")).toBe("");
+  });
+
+  it("uses loaded image dimensions for intrinsic tracks and restores them on unload", async () => {
+    const { root, renderer } = setup(callout("grid", "Grid", '<p><img src="a.svg"></p>'));
+    const image = root.querySelector("img")!;
+    expect(image.style.getPropertyValue("--ft-image-width")).toBe("");
+    Object.defineProperty(image, "naturalWidth", { value: 300, configurable: true });
+    image.dispatchEvent(new Event("load"));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(image.style.getPropertyValue("--ft-image-width")).toBe("300px");
+    Object.defineProperty(image, "naturalWidth", { value: 640 });
+    image.dispatchEvent(new Event("load"));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(image.style.getPropertyValue("--ft-image-width")).toBe("640px");
+    renderer.destroy();
+    expect(image.style.getPropertyValue("--ft-image-width")).toBe("");
+    image.dispatchEvent(new Event("load"));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(image.style.getPropertyValue("--ft-image-width")).toBe("");
   });
 
   it("handles asynchronously rendered tables and recycled callout types", async () => {

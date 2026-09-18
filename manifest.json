@@ -1,7 +1,7 @@
 {
   "id": "figures-and-tables",
   "name": "Figures and Tables",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minAppVersion": "1.5.0",
   "description": "Add captions to figures and tables and arrange them in responsive grids using callouts.",
   "author": "yuki",

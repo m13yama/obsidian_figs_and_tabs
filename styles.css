@@ -1,5 +1,11 @@
 /* Only callouts claimed by this plugin are styled. Native content stays intact. */
 .callout.ft-callout {
+  /* Obsidian recolors table borders inside callouts. Use the note's values. */
+  --table-border-color: inherit;
+  --bases-table-header-background: inherit;
+  --bases-table-header-background-hover: inherit;
+  --bases-embed-border-color: inherit;
+  --bases-table-border-color: inherit;
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -7,6 +13,8 @@
   padding: 0;
   min-width: 0;
   mix-blend-mode: normal;
+  color: inherit;
+  font: inherit;
 }
 
 .ft-callout > .callout-title {
@@ -24,6 +32,7 @@
 }
 
 .ft-callout > .callout-title > .callout-title-inner {
+  --font-weight: var(--font-normal);
   min-width: 0;
   font-weight: var(--font-normal);
   overflow-wrap: anywhere;
@@ -34,6 +43,8 @@
   padding: 0;
   min-width: 0;
   background: transparent;
+  color: inherit;
+  font: inherit;
 }
 
 .ft-figure,
@@ -69,13 +80,16 @@
   text-align: center;
 }
 
-.ft-figure > .callout-content img {
+.ft-figure > .callout-content img,
+.ft-grid-figure img,
+img.ft-grid-figure {
   max-width: 100%;
   height: auto;
   object-fit: contain;
 }
 
-.ft-figure > .callout-content .image-embed {
+.ft-figure > .callout-content .image-embed,
+.ft-grid-figure .image-embed {
   max-width: 100%;
 }
 
@@ -93,21 +107,56 @@
 
 .ft-grid > .callout-content {
   display: grid;
-  /* Keep every column readable; excess width scrolls inside the grid. */
-  grid-template-columns: repeat(var(--ft-columns, 2), minmax(240px, 1fr));
-  gap: var(--ft-gap, 16px);
+  grid-template-columns: repeat(var(--ft-columns, 2), max-content);
+  column-gap: var(--ft-lgap, 16px);
+  row-gap: var(--ft-vgap, 16px);
+  /* Start-align overflow so centering never hides the leftmost content. */
+  justify-content: safe center;
   align-items: start;
   overflow-x: auto;
 }
 
-.ft-grid > .callout-content > .ft-callout {
+/* Let the outer grid scroll at each image's natural or explicitly authored size. */
+.ft-grid :is(.ft-figure, .ft-grid-figure) img,
+.ft-grid img.ft-grid-figure {
+  max-width: none;
+}
+
+.ft-grid :is(.ft-figure, .ft-grid-figure) img:not([width]),
+.ft-grid img.ft-grid-figure:not([width]) {
+  width: var(--ft-image-width, auto);
+}
+
+/* Override Live Preview's extra margins for nested callouts as well. */
+.callout.ft-grid > .callout-content > :is(.callout.ft-callout, .ft-grid-item) {
   grid-column: span var(--ft-span, 1);
   margin: 0;
   min-width: 0;
 }
 
+.ft-grid-item {
+  --ft-span: 1;
+}
+
+.ft-grid-table {
+  overflow-x: auto;
+}
+
+/* Make a bare table its own scroll container without replacing its native DOM. */
+table.ft-grid-table {
+  display: block;
+}
+
+.ft-grid-table table {
+  margin-block: 0;
+}
+
+.ft-grid-figure {
+  text-align: center;
+}
+
 /* Ordinary content is kept visible and occupies a full row. */
-.ft-grid > .callout-content > :not(.ft-callout) {
+.ft-grid > .callout-content > :not(.ft-callout, .ft-grid-item) {
   grid-column: 1 / -1;
   min-width: 0;
 }
@@ -118,11 +167,12 @@
   }
 
   .ft-grid > .callout-content {
-    grid-template-columns: repeat(var(--ft-columns, 2), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--ft-columns, 2), auto);
     overflow: visible;
   }
 
-  .ft-table > .callout-content {
+  .ft-table > .callout-content,
+  .ft-grid-table {
     overflow: visible;
   }
 }

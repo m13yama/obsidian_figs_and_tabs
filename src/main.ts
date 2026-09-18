@@ -70,12 +70,14 @@ class FiguresAndTablesSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         });
       });
-    new Setting(this.containerEl).setName("既定の間隔").setDesc("gap の省略時の間隔（px）。")
-      .addSlider(slider => slider.setLimits(0, 96, 1).setValue(this.plugin.settings.gap).setDynamicTooltip()
-        .onChange(async value => {
-          this.plugin.settings.gap = value;
-          await this.plugin.saveSettings();
-        }));
+    for (const [key, name] of [["lgap", "既定の横方向の間隔"], ["vgap", "既定の縦方向の間隔"]] as const) {
+      new Setting(this.containerEl).setName(name).setDesc(`${key} の省略時の間隔（px）。`)
+        .addSlider(slider => slider.setLimits(0, 96, 1).setValue(this.plugin.settings[key]).setDynamicTooltip()
+          .onChange(async value => {
+            this.plugin.settings[key] = value;
+            await this.plugin.saveSettings();
+          }));
+    }
   }
 }
 
@@ -101,7 +103,7 @@ export default class FiguresAndTablesPlugin extends Plugin {
     this.addCommand({
       id: "wrap-grid",
       name: "選択した図表をグリッドにする / グリッドを挿入",
-      editorCallback: editor => this.edit(editor, (source, from, to) => wrapGrid(source, from, to, this.settings.columns, this.settings.gap)),
+      editorCallback: editor => this.edit(editor, (source, from, to) => wrapGrid(source, from, to, this.settings.columns, this.settings.lgap, this.settings.vgap)),
     });
     this.addCommand({
       id: "change-grid-columns",

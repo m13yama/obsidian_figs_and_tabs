@@ -8,21 +8,28 @@ describe("callout options", () => {
   });
 
   it("accepts the documented layout syntax and independent caption overrides", () => {
-    expect(parseOptions("grid", "cols=3 gap=0", DEFAULT_SETTINGS)).toMatchObject({ columns: 3, gap: 0 });
+    expect(parseOptions("grid", "cols=3 lgap=24 vgap=0", DEFAULT_SETTINGS)).toMatchObject({ columns: 3, lgap: 24, vgap: 0 });
+    expect(parseOptions("grid", "lgap=0 vgap=96", DEFAULT_SETTINGS)).toMatchObject({ lgap: 0, vgap: 96 });
     expect(parseOptions("figure", "span=2 caption=top", DEFAULT_SETTINGS)).toMatchObject({ span: 2, caption: "top" });
   });
 
   it("falls back per invalid option and never passes CSS from metadata through", () => {
-    expect(parseOptions("grid", "cols=999 gap=24 unknown=ok", DEFAULT_SETTINGS)).toMatchObject({ columns: 2, gap: 24 });
-    for (const metadata of ["cols=2.5 gap=-1", "cols=NaN gap=Infinity", "cols=2;display:none gap=calc(2px)", "cols= gap=97"]) {
-      expect(parseOptions("grid", metadata, DEFAULT_SETTINGS)).toMatchObject({ columns: 2, gap: 16 });
+    expect(parseOptions("grid", "cols=999 lgap=24 vgap=-1 unknown=ok", DEFAULT_SETTINGS)).toMatchObject({ columns: 2, lgap: 24, vgap: 16 });
+    for (const metadata of ["cols=2.5 lgap=-1 vgap=2.5", "cols=NaN lgap=Infinity vgap=NaN", "cols=2;display:none lgap=calc(2px)", "cols= lgap=97 vgap=97"]) {
+      expect(parseOptions("grid", metadata, DEFAULT_SETTINGS)).toMatchObject({ columns: 2, lgap: 16, vgap: 16 });
     }
   });
 
   it("validates persisted settings and ignores unknown fields", () => {
     expect(loadSettings(null)).toEqual(DEFAULT_SETTINGS);
-    expect(loadSettings({ columns: "3", gap: -20, figureCaption: "left" })).toEqual(DEFAULT_SETTINGS);
-    expect(loadSettings({ columns: 4, gap: 0, tableCaption: "bottom", extra: true }))
-      .toEqual({ ...DEFAULT_SETTINGS, columns: 4, gap: 0, tableCaption: "bottom" });
+    expect(loadSettings({ columns: "3", lgap: -20, vgap: 100, figureCaption: "left" })).toEqual(DEFAULT_SETTINGS);
+    expect(loadSettings({ columns: 4, lgap: 0, vgap: 32, tableCaption: "bottom", extra: true }))
+      .toEqual({ ...DEFAULT_SETTINGS, columns: 4, lgap: 0, vgap: 32, tableCaption: "bottom" });
+  });
+
+  it("ignores the retired gap option and setting without migrating it", () => {
+    const settings = { ...DEFAULT_SETTINGS, lgap: 12, vgap: 24 };
+    expect(parseOptions("grid", "gap=80", settings)).toMatchObject({ lgap: 12, vgap: 24 });
+    expect(loadSettings({ gap: 80 })).toEqual(DEFAULT_SETTINGS);
   });
 });

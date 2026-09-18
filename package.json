@@ -1,6 +1,6 @@
 {
   "name": "figures-and-tables",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Captions and responsive grids for figures and tables in Obsidian.",
   "main": "main.js",

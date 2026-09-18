@@ -49,32 +49,32 @@ describe("grid commands", () => {
 
   it("retains the grid between children and terminates it before the following paragraph", () => {
     const source = figures + "\n本文";
-    expect(apply(source, wrapGrid(source, 0, figures.length, 2, 16)))
-      .toBe("> [!grid|cols=2 gap=16]\n> > [!figure] A\n> > ![[a.png]]\n>\n> > [!table] B\n> > | A | B |\n> > | --- | --- |\n\n本文");
+    expect(apply(source, wrapGrid(source, 0, figures.length, 2, 24, 16)))
+      .toBe("> [!grid|cols=2 lgap=24 vgap=16]\n> > [!figure] A\n> > ![[a.png]]\n>\n> > [!table] B\n> > | A | B |\n> > | --- | --- |\n\n本文");
   });
 
   it("adds one quote level to nested callouts without escaping their parent", () => {
     const source = figures.split("\n").map(line => line ? `> ${line}` : ">").join("\n");
-    const output = apply(source, wrapGrid(source, 0, source.length, 3, 8));
-    expect(output).toContain("> > [!grid|cols=3 gap=8]\n> > > [!figure] A");
+    const output = apply(source, wrapGrid(source, 0, source.length, 3, 8, 12));
+    expect(output).toContain("> > [!grid|cols=3 lgap=8 vgap=12]\n> > > [!figure] A");
     expect(output).toContain("\n> >\n> > > [!table]");
   });
 
   it("rejects selections containing unquoted text", () => {
     const source = figures + "\n\n外の本文";
-    expect(() => wrapGrid(source, 0, source.length, 2, 16)).toThrow("calloutの外");
-    expect(() => wrapGrid("本文", 0, 2, 2, 16)).toThrow("callout全体");
+    expect(() => wrapGrid(source, 0, source.length, 2, 24, 16)).toThrow("calloutの外");
+    expect(() => wrapGrid("本文", 0, 2, 2, 24, 16)).toThrow("callout全体");
   });
 
   it("inserts a two-figure template at an empty cursor", () => {
-    const output = apply("", wrapGrid("", 0, 0, 2, 16));
+    const output = apply("", wrapGrid("", 0, 0, 2, 24, 16));
     expect(output).toContain("> > [!figure] 図A");
     expect(output).toContain("\n>\n> > [!figure] 図B");
   });
 
-  it("changes columns while keeping gap, unknown metadata, folding and title", () => {
-    expect(changeGridColumns("> > [!grid|gap=24 cols=2 future=ok cols=5]- 比較", 3))
-      .toBe("> > [!grid|cols=3 gap=24 future=ok]- 比較");
+  it("changes columns while keeping both gaps, unknown metadata, folding and title", () => {
+    expect(changeGridColumns("> > [!grid|lgap=24 vgap=24 cols=2 future=ok cols=5]- 比較", 3))
+      .toBe("> > [!grid|cols=3 lgap=24 vgap=24 future=ok]- 比較");
     expect(changeGridColumns("> [!grid]", 1)).toBe("> [!grid|cols=1]");
     expect(() => changeGridColumns("> [!figure] A", 2)).toThrow();
   });

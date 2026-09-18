@@ -5,14 +5,16 @@ export interface Settings {
   figureCaption: CaptionPosition;
   tableCaption: CaptionPosition;
   columns: number;
-  gap: number;
+  lgap: number;
+  vgap: number;
 }
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
   figureCaption: "bottom",
   tableCaption: "top",
   columns: 2,
-  gap: 16,
+  lgap: 16,
+  vgap: 16,
 };
 
 export function isKind(value: string | null): value is CalloutKind {
@@ -33,13 +35,15 @@ export function loadSettings(value: unknown): Settings {
     figureCaption: isPosition(data.figureCaption) ? data.figureCaption : DEFAULT_SETTINGS.figureCaption,
     tableCaption: isPosition(data.tableCaption) ? data.tableCaption : DEFAULT_SETTINGS.tableCaption,
     columns: validInteger(data.columns, 1, 6) ? data.columns : DEFAULT_SETTINGS.columns,
-    gap: validInteger(data.gap, 0, 96) ? data.gap : DEFAULT_SETTINGS.gap,
+    lgap: validInteger(data.lgap, 0, 96) ? data.lgap : DEFAULT_SETTINGS.lgap,
+    vgap: validInteger(data.vgap, 0, 96) ? data.vgap : DEFAULT_SETTINGS.vgap,
   };
 }
 
 export interface CalloutOptions {
   columns: number;
-  gap: number;
+  lgap: number;
+  vgap: number;
   span: number;
   caption: CaptionPosition;
 }
@@ -48,7 +52,8 @@ export interface CalloutOptions {
 export function parseOptions(kind: CalloutKind, metadata: string, settings: Settings): CalloutOptions {
   const result: CalloutOptions = {
     columns: settings.columns,
-    gap: settings.gap,
+    lgap: settings.lgap,
+    vgap: settings.vgap,
     span: 1,
     caption: kind === "table" ? settings.tableCaption : settings.figureCaption,
   };
@@ -61,7 +66,8 @@ export function parseOptions(kind: CalloutKind, metadata: string, settings: Sett
     } else if (value && /^\d+$/.test(value)) {
       const number = Number(value);
       if (kind === "grid" && key === "cols" && validInteger(number, 1, 6)) result.columns = number;
-      if (kind === "grid" && key === "gap" && validInteger(number, 0, 96)) result.gap = number;
+      if (kind === "grid" && key === "lgap" && validInteger(number, 0, 96)) result.lgap = number;
+      if (kind === "grid" && key === "vgap" && validInteger(number, 0, 96)) result.vgap = number;
       if (kind !== "grid" && key === "span" && validInteger(number, 1, 6)) result.span = number;
     }
   }

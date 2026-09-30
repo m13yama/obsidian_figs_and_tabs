@@ -315,7 +315,9 @@ try {
           leaf.view.editor.setCursor({ line: leaf.view.editor.lineCount() - 1, ch: 0 });
         }, fixture.name);
       }
-      const rootSelector = mode === "reading" ? ".markdown-preview-view" : ".markdown-source-view";
+      const rootSelector = mode === "reading"
+        ? ".workspace-leaf.mod-active .markdown-reading-view > .markdown-preview-view"
+        : ".workspace-leaf.mod-active .markdown-source-view";
       await page.waitForFunction(({ selector, count, imageCount }) => {
         const grid = document.querySelector(`${selector} .ft-grid > .callout-content`);
         return grid?.querySelectorAll(":scope > :is(.ft-callout, .ft-grid-item)").length === count &&
@@ -488,6 +490,82 @@ try {
     }
   }
 
+  // Expanded callouts use block styling in both editing modes, without altering text.
+  const editorSource = [
+    "# Editor styling", "", "Ordinary `inline code` and *emphasis*.", "", "> Ordinary quote", "",
+    "> [!note] Ordinary callout", "> Note text", "",
+    "> [!grid|cols=2 lgap=24 vgap=16]", "> > [!figure|width=300] Current flow",
+    "> > ```mermaid", "> > graph TD", "> >     A[Start] --> B[Finish]", "> > ```", ">",
+    "> > [!table] Results", "> > | Item | Value |", "> > | --- | --- |", "> > | A | 1 |", ">",
+    "> Text with `inline code` and *emphasis*.", ">", "> ![[example-apparatus.svg|120]]", "", "Text outside grid.", "", "Editing position",
+  ].join("\n");
+  await page.evaluate(async source => {
+    const file = await app.vault.create("editor-styles.md", source);
+    await app.workspace.getLeaf(false).openFile(file, { state: { mode: "source", source: false } });
+  }, editorSource);
+  for (const sourceMode of [false, true]) {
+    await page.evaluate(async sourceMode => {
+      const leaf = app.workspace.activeLeaf;
+      await leaf.setViewState({ type: "markdown", state: { file: "editor-styles.md", mode: "source", source: sourceMode } });
+      leaf.view.editor.setCursor({ line: 13, ch: 13 });
+      leaf.view.editor.focus();
+    }, sourceMode);
+    await page.waitForFunction(() => document.querySelectorAll(".markdown-source-view .ft-source-code").length === 4);
+    for (const theme of ["light", "dark"]) {
+      const styles = await page.evaluate(theme => {
+        document.body.classList.toggle("theme-dark", theme === "dark");
+        document.body.classList.toggle("theme-light", theme === "light");
+        const root = document.querySelector(".workspace-leaf.mod-active .markdown-source-view");
+        const line = text => [...root.querySelectorAll(".cm-line")].find(el => el.textContent.includes(text));
+        const code = root.querySelector(".ft-source-code .cm-inline-code");
+        const inlineStyle = element => {
+          const css = getComputedStyle(element);
+          return { background: css.backgroundColor, padding: css.padding, color: css.color, font: css.fontFamily };
+        };
+        const quote = line("Ordinary quote");
+        return {
+          code: inlineStyle(code),
+          codeLines: [...root.querySelectorAll(".ft-source-code")].map(el => ({
+            background: getComputedStyle(el).backgroundColor,
+            quoteBorder: getComputedStyle(el).getPropertyValue("--blockquote-border-thickness").trim(),
+          })),
+          headers: [...root.querySelectorAll(".ft-source-header")].map(el => el.textContent),
+          outsideDecorated: line("Text outside grid.").classList.contains("ft-source-line"),
+          quoteDecorated: quote.classList.contains("ft-source-line"),
+          quoteBorder: getComputedStyle(quote).getPropertyValue("--blockquote-border-thickness").trim(),
+          bodyInline: inlineStyle(line("Ordinary").querySelector(".cm-inline-code")),
+          gridInline: inlineStyle(line("Text with").querySelector(".cm-inline-code")),
+          emphasis: getComputedStyle(line("Text with").querySelector(".cm-em")).fontStyle,
+        };
+      }, theme);
+      assert.equal(styles.code.background, "rgba(0, 0, 0, 0)", "Mermaid has no inline-code pills");
+      assert.equal(styles.code.padding, "0px");
+      assert(styles.codeLines.every(line => line.background !== "rgba(0, 0, 0, 0)" && line.background === styles.codeLines[0].background));
+      assert(styles.codeLines.every(line => line.quoteBorder === "0px"), "Layout code has no native quote borders");
+      assert.notEqual(styles.quoteBorder, "0px", "Ordinary quotes retain their border");
+      assert.equal(styles.headers.length, 3, "Grid and item headers are distinct");
+      assert(!styles.outsideDecorated && !styles.quoteDecorated);
+      assert.deepEqual(styles.gridInline, styles.bodyInline, "Real inline code preserves its appearance inside a grid");
+      assert.equal(styles.emphasis, "italic", "Inline emphasis is preserved");
+      await page.screenshot({ path: `test-results/editor-${sourceMode ? "source" : "live-expanded"}-${theme}.png` });
+    }
+    assert.equal(await page.evaluate(() => app.workspace.activeLeaf.view.editor.getValue()), editorSource);
+  }
+  await page.keyboard.type("X");
+  assert.equal(await page.evaluate(() => app.workspace.activeLeaf.view.editor.getLine(13)), "> >     A[StaXrt] --> B[Finish]", "Typing still uses the original cursor positions");
+  await page.evaluate(() => app.workspace.activeLeaf.view.editor.undo());
+  assert.equal(await page.evaluate(() => app.workspace.activeLeaf.view.editor.getValue()), editorSource);
+  await page.evaluate(async () => { await app.plugins.disablePlugin("figures-and-tables"); });
+  await page.waitForFunction(() => !document.querySelector(".ft-source-line"));
+  await page.evaluate(async () => { await app.plugins.enablePlugin("figures-and-tables"); });
+  await page.waitForFunction(() => document.querySelectorAll(".ft-source-code").length === 4);
+  await page.evaluate(async () => {
+    const leaf = app.workspace.activeLeaf;
+    await leaf.setViewState({ type: "markdown", state: { file: "editor-styles.md", mode: "source", source: false } });
+    leaf.view.editor.setCursor({ line: leaf.view.editor.lineCount() - 1, ch: 0 });
+  });
+  await page.waitForFunction(() => document.querySelector(".markdown-source-view .ft-grid .mermaid svg"));
+
   // Bare items must also lose their plugin-only classes on unload.
   await page.evaluate(async () => { await app.plugins.disablePlugin("figures-and-tables"); });
   assert.equal(await page.locator(".ft-grid-item").count(), 0);
@@ -503,7 +581,7 @@ try {
   await page.waitForFunction(() => document.querySelectorAll(".ft-callout").length > 0);
   assert.deepEqual(errors, [], "No renderer errors");
   const version = /Obsidian ([\d.]+)/.exec(await page.title())?.[1] ?? "unknown";
-  console.log(`PASS Obsidian ${version}: reading, Live Preview, bare/mixed items, centered content widths, lgap/vgap, image sizes, Mermaid blocks/note embeds/block embeds/width edits, body styles in light/dark/custom colors, boundaries, captions, spans, horizontal scroll, table edit, command/undo, unload/reload`);
+  console.log(`PASS Obsidian ${version}: reading, Live Preview, bare/mixed items, centered content widths, lgap/vgap, image sizes, Mermaid blocks/note embeds/block embeds/width edits, body styles in light/dark/custom colors, source and expanded-callout styling in light/dark, typing/undo, boundaries, captions, spans, horizontal scroll, table edit, command/undo, unload/reload`);
   console.log(`Screenshots: test-results/. Disposable vault: ${vault}`);
 } catch (error) {
   const page = browser?.contexts()[0]?.pages()[0];

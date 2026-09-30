@@ -1,10 +1,11 @@
 import { ViewPlugin } from "@codemirror/view";
 import type { EditorView, ViewUpdate } from "@codemirror/view";
 import type { CalloutController, CalloutRenderer } from "./render";
+import { calloutSourceStyles } from "./source";
 
 /** Style native callout widgets; never replace editor text or table widgets. */
 export function calloutEditorExtension(renderer: CalloutRenderer) {
-  return ViewPlugin.fromClass(class {
+  return [calloutSourceStyles, ViewPlugin.fromClass(class {
     private readonly controller: CalloutController;
 
     constructor(view: EditorView) {
@@ -18,5 +19,5 @@ export function calloutEditorExtension(renderer: CalloutRenderer) {
     destroy(): void {
       this.controller.destroy();
     }
-  });
+  })];
 }

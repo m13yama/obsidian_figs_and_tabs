@@ -1,4 +1,63 @@
 /* Only callouts claimed by this plugin are styled. Native content stays intact. */
+
+/* Source mode and expanded Live Preview callouts use the same line decorations. */
+.markdown-source-view.mod-cm6 .cm-line.ft-source-line {
+  --blockquote-border-thickness: 0px;
+  --blockquote-background-color: transparent;
+  --blockquote-color: var(--text-normal);
+  --blockquote-font-style: normal;
+  background: var(--background-primary-alt);
+  color: var(--text-normal);
+  font-style: normal;
+  box-shadow: inset 2px 0 var(--background-modifier-border);
+}
+
+.markdown-source-view.mod-cm6 .ft-source-line::before,
+.markdown-source-view.mod-cm6 .ft-source-line .cm-blockquote-border::before {
+  border: 0;
+}
+
+.markdown-source-view.mod-cm6 .ft-source-line .cm-formatting-quote,
+.markdown-source-view.mod-cm6 .ft-source-line .cm-formatting-quote .cm-transparent,
+.markdown-source-view.mod-cm6 .ft-source-line .cm-blockquote-border {
+  color: var(--text-faint);
+}
+
+.markdown-source-view.mod-cm6 .cm-line.ft-source-header {
+  background: var(--background-secondary);
+  box-shadow: inset 3px 0 var(--interactive-accent);
+  font-weight: var(--font-semibold);
+}
+
+.markdown-source-view.mod-cm6 .ft-source-header .cm-hmd-callout {
+  color: var(--text-accent);
+}
+
+.markdown-source-view.mod-cm6 .cm-line.ft-source-code {
+  background: var(--code-background);
+  font-family: var(--font-monospace);
+  font-size: var(--code-size);
+}
+
+/* Only fenced code loses inline-code pills; real inline code keeps its styling. */
+.markdown-source-view.mod-cm6 .ft-source-code .cm-inline-code {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  color: var(--code-normal);
+  font: inherit;
+}
+
+.markdown-source-view.mod-cm6 .ft-source-code-start {
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.markdown-source-view.mod-cm6 .ft-source-code-end {
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
 .callout.ft-callout {
   /* Obsidian recolors table borders inside callouts. Use the note's values. */
   --table-border-color: inherit;

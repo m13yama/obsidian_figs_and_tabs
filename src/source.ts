@@ -62,9 +62,11 @@ function decorateSource(doc: Text): DecorationSet {
     if (scope?.kind && depth >= scope.depth) {
       const classes = ["ft-source-line", `ft-source-${scope.kind}`];
       if (header) classes.push("ft-source-header");
-      if (fence) classes.push("ft-source-code");
-      if (codeStart) classes.push("ft-source-code-start");
-      if (codeEnd) classes.push("ft-source-code-end");
+      // Reuse Obsidian's fenced-code styling, including theme-defined corners
+      // and borders. The quote parser otherwise exposes these as inline code.
+      if (fence) classes.push("ft-source-code", "HyperMD-codeblock", "HyperMD-codeblock-bg");
+      if (codeStart) classes.push("ft-source-code-start", "HyperMD-codeblock-begin", "HyperMD-codeblock-begin-bg");
+      if (codeEnd) classes.push("ft-source-code-end", "HyperMD-codeblock-end", "HyperMD-codeblock-end-bg");
       builder.add(from, from, Decoration.line({ class: classes.join(" ") }));
     }
     if (codeEnd) fence = undefined;

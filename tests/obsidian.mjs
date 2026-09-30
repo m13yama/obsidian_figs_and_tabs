@@ -497,12 +497,22 @@ try {
     "> [!grid|cols=2 lgap=24 vgap=16]", "> > [!figure|width=300] Current flow",
     "> > ```mermaid", "> > graph TD", "> >     A[Start] --> B[Finish]", "> > ```", ">",
     "> > [!table] Results", "> > | Item | Value |", "> > | --- | --- |", "> > | A | 1 |", ">",
-    "> Text with `inline code` and *emphasis*.", ">", "> ![[example-apparatus.svg|120]]", "", "Text outside grid.", "", "Editing position",
+    "> Text with `inline code` and *emphasis*.", ">", "> ![[example-apparatus.svg|120]]", "", "Text outside grid.", "",
+    "```mermaid", "graph TD", "    A[Start] --> B[Finish]", "```", "", "Editing position",
   ].join("\n");
   await page.evaluate(async source => {
     const file = await app.vault.create("editor-styles.md", source);
     await app.workspace.getLeaf(false).openFile(file, { state: { mode: "source", source: false } });
   }, editorSource);
+  const codeBlockStyles = selector => [...document.querySelectorAll(`.workspace-leaf.mod-active .markdown-source-view ${selector}`)].map(el => {
+    const css = getComputedStyle(el);
+    // Background intentionally distinguishes nested code; everything else
+    // should follow the native code block, including its first and last lines.
+    return Object.fromEntries([
+      "color", "fontFamily", "fontSize", "fontWeight", "fontStyle", "lineHeight",
+      "padding", "margin", "border", "borderRadius", "boxShadow", "textIndent",
+    ].map(property => [property, css[property]]));
+  });
   for (const sourceMode of [false, true]) {
     await page.evaluate(async sourceMode => {
       const leaf = app.workspace.activeLeaf;
@@ -512,9 +522,17 @@ try {
     }, sourceMode);
     await page.waitForFunction(() => document.querySelectorAll(".markdown-source-view .ft-source-code").length === 4);
     for (const theme of ["light", "dark"]) {
-      const styles = await page.evaluate(theme => {
+      await page.evaluate(theme => {
         document.body.classList.toggle("theme-dark", theme === "dark");
         document.body.classList.toggle("theme-light", theme === "light");
+        app.workspace.activeLeaf.view.editor.setCursor({ line: 29, ch: 4 });
+      }, theme);
+      await page.waitForFunction(() => document.querySelectorAll(".markdown-source-view .HyperMD-codeblock:not(.ft-source-code)").length === 4);
+      const nativeCodeStyles = await page.evaluate(codeBlockStyles, ".HyperMD-codeblock:not(.ft-source-code)");
+      await page.evaluate(() => app.workspace.activeLeaf.view.editor.setCursor({ line: 13, ch: 13 }));
+      await page.waitForFunction(() => document.querySelectorAll(".markdown-source-view .ft-source-code").length === 4);
+      assert.deepEqual(await page.evaluate(codeBlockStyles, ".ft-source-code"), nativeCodeStyles, `${sourceMode ? "Source" : "Live Preview"}/${theme}: nested Mermaid matches native code styling`);
+      const styles = await page.evaluate(() => {
         const root = document.querySelector(".workspace-leaf.mod-active .markdown-source-view");
         const line = text => [...root.querySelectorAll(".cm-line")].find(el => el.textContent.includes(text));
         const code = root.querySelector(".ft-source-code .cm-inline-code");
@@ -529,7 +547,8 @@ try {
             background: getComputedStyle(el).backgroundColor,
             quoteBorder: getComputedStyle(el).getPropertyValue("--blockquote-border-thickness").trim(),
           })),
-          headers: [...root.querySelectorAll(".ft-source-header")].map(el => el.textContent),
+          gridBackground: getComputedStyle(line("Text with")).backgroundColor,
+          headers: [...root.querySelectorAll(".ft-source-header")].map(el => ({ text: el.textContent, background: getComputedStyle(el).backgroundColor })),
           outsideDecorated: line("Text outside grid.").classList.contains("ft-source-line"),
           quoteDecorated: quote.classList.contains("ft-source-line"),
           quoteBorder: getComputedStyle(quote).getPropertyValue("--blockquote-border-thickness").trim(),
@@ -537,13 +556,15 @@ try {
           gridInline: inlineStyle(line("Text with").querySelector(".cm-inline-code")),
           emphasis: getComputedStyle(line("Text with").querySelector(".cm-em")).fontStyle,
         };
-      }, theme);
+      });
       assert.equal(styles.code.background, "rgba(0, 0, 0, 0)", "Mermaid has no inline-code pills");
       assert.equal(styles.code.padding, "0px");
       assert(styles.codeLines.every(line => line.background !== "rgba(0, 0, 0, 0)" && line.background === styles.codeLines[0].background));
+      assert.notEqual(styles.codeLines[0].background, styles.gridBackground, "Background distinguishes code nested inside the grid");
       assert(styles.codeLines.every(line => line.quoteBorder === "0px"), "Layout code has no native quote borders");
       assert.notEqual(styles.quoteBorder, "0px", "Ordinary quotes retain their border");
       assert.equal(styles.headers.length, 3, "Grid and item headers are distinct");
+      assert(styles.headers.every(header => header.background !== styles.gridBackground), "Layout headers keep their highlighted background");
       assert(!styles.outsideDecorated && !styles.quoteDecorated);
       assert.deepEqual(styles.gridInline, styles.bodyInline, "Real inline code preserves its appearance inside a grid");
       assert.equal(styles.emphasis, "italic", "Inline emphasis is preserved");

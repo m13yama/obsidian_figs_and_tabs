@@ -4,11 +4,11 @@ An Obsidian plugin that adds captions to figures and tables and arranges them si
 
 The plugin is currently in beta. Download it from [GitHub Releases](https://github.com/m13yama/obsidian_figs_and_tabs/releases).
 
-Version 0.3.1 improves editing with highlighted layout headers, visible source boundaries, and continuous backgrounds for Mermaid and other fenced code inside callouts. It includes the Mermaid grids and width controls introduced in 0.3.0. Existing 0.2.0 and 0.3.0 notes and settings continue to work. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
+Version 0.3.2 makes Mermaid and other fenced code inside callouts follow Obsidian's native code-block styling, with a different background to distinguish nesting. It includes highlighted layout headers, Mermaid grids, and width controls from previous versions. Existing 0.2.0 and 0.3.x notes and settings continue to work. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
 
 ## Installation
 
-1. Download `figures-and-tables-0.3.1.zip` from the Assets section of the [0.3.1 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.3.1) and extract it.
+1. Download `figures-and-tables-0.3.2.zip` from the Assets section of the [0.3.2 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.3.2) and extract it.
 2. Copy the extracted `figures-and-tables` folder into your vault's `.obsidian/plugins/` directory.
 3. In Obsidian, open **Settings → Community plugins** and enable **Figures and Tables**. Reload Obsidian if needed.
 
@@ -152,7 +152,7 @@ After creating a figure or table, the `Caption` placeholder is selected so you c
 
 Live Preview uses Obsidian's native callout rendering and editing controls. Use the callout's edit button to reveal its Markdown. The plugin does not provide a separate table cell editor.
 
-While editing a `grid`, `figure`, or `table`, layout headers are highlighted and a continuous background marks their source lines. Fenced code, including Mermaid inside nested callouts, uses a block background instead of separate inline-code backgrounds. Quote markers remain visible for editing, without the usual quotation borders. These styles work in Source mode and expanded Live Preview callouts, follow the light/dark theme, and preserve ordinary quotes, other callout types, and actual inline code.
+While editing a `grid`, `figure`, or `table`, layout headers are highlighted and a continuous background marks their source lines. Fenced code, including Mermaid inside nested callouts, follows Obsidian's native code-block font, spacing, and rounded corners, with a different background to distinguish nesting. Quote markers remain visible for editing, without the usual quotation borders. These styles work in Source mode and expanded Live Preview callouts, follow the light/dark theme, and preserve ordinary quotes, other callout types, and actual inline code.
 
 ## Examples
 
@@ -197,7 +197,7 @@ Rendering does not rewrite note content. The plugin adds attributes and styles w
 
 ### Current scope
 
-Verified with Obsidian 1.12.7 on Linux using the default theme: Reading view and Live Preview, captionless and mixed content, centered grids sized to their content, independent spacing, grid boundaries, caption positions, spans, horizontal scrolling in narrow panes, explicit image widths, Mermaid code blocks and note/block embeds with independent widths, Mermaid width edits and aspect ratios, wide tables, table edits, commands and Undo, and disabling/re-enabling the plugin. Figure and table styles are compared with ordinary note content in light and dark modes and with customized table border colors. Source mode and expanded Live Preview callouts are checked in light and dark themes, including continuous code backgrounds, ordinary quote and inline formatting preservation, typing, Undo, and cleanup. All 37 unit tests pass, covering options, editing transformations, source boundaries, and the rendering lifecycle, including Mermaid width validation and delayed rendering.
+Verified with Obsidian 1.12.7 on Linux using the default theme: Reading view and Live Preview, captionless and mixed content, centered grids sized to their content, independent spacing, grid boundaries, caption positions, spans, horizontal scrolling in narrow panes, explicit image widths, Mermaid code blocks and note/block embeds with independent widths, Mermaid width edits and aspect ratios, wide tables, table edits, commands and Undo, and disabling/re-enabling the plugin. Figure and table styles are compared with ordinary note content in light and dark modes and with customized table border colors. Source mode and expanded Live Preview callouts are checked in light and dark themes, including native code-block font, spacing, and corner comparisons, distinct nested backgrounds, ordinary quote and inline formatting preservation, typing, Undo, and cleanup. All 37 unit tests pass, covering options, editing transformations, source boundaries, and the rendering lifecycle, including Mermaid width validation and delayed rendering.
 
 Implemented features include captions, grids, column spans, layout settings, and editing commands. Automatic numbering, cross-references, subfigure labels such as (a)/(b), and vault-wide lists of figures and tables are not implemented. Print CSS is included, but PDF export, physical mobile devices, and community themes still need verification.
 

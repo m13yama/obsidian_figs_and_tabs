@@ -173,6 +173,11 @@ img.ft-grid-figure {
   overflow-x: auto;
 }
 
+/* Figures align at the bottom of each row; tables keep the grid's top alignment. */
+.ft-grid > .callout-content > :is(.ft-figure, .ft-grid-figure) {
+  align-self: end;
+}
+
 /* Let the outer grid scroll at each image's natural or explicitly authored size. */
 .ft-grid :is(.ft-figure, .ft-grid-figure) img,
 .ft-grid img.ft-grid-figure {

@@ -14,6 +14,17 @@ let browser;
 let launchLog = "";
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+function checkRowAlignment(items, context) {
+  const top = Math.min(...items.map(item => item.y));
+  const bottom = Math.max(...items.map(item => item.y + item.height));
+  assert(Math.max(...items.map(item => item.y)) < Math.min(...items.map(item => item.y + item.height)),
+    `${context}: items share a row`);
+  for (const item of items) {
+    const offset = item.type === "figure" ? item.y + item.height - bottom : item.y - top;
+    assert(Math.abs(offset) < 1, `${context}: ${item.type} aligns to the ${item.type === "figure" ? "bottom" : "top"}`);
+  }
+}
+
 try {
   if (!endpoint) {
     const root = await mkdtemp(join(tmpdir(), "figures-and-tables-obsidian-"));
@@ -96,7 +107,7 @@ try {
         columns: getComputedStyle(content).gridTemplateColumns.split(" ").length,
         viewportWidth: content.clientWidth,
         contentWidth: content.scrollWidth,
-        grid: box(grid), items: items.map(box),
+        grid: box(grid), items: items.map(item => ({ ...box(item), type: item.getAttribute("data-callout") })),
         captions: items.map(item => ({
           title: box(item.querySelector(":scope > .callout-title")),
           content: box(item.querySelector(":scope > .callout-content")),
@@ -111,7 +122,7 @@ try {
   async function checkHorizontalScroll(mode) {
     const narrow = await layout(mode);
     assert.equal(narrow.columns, 2, "Narrow panes retain the configured columns");
-    assert(Math.abs(narrow.items[0].y - narrow.items[1].y) < 1, "Figure and table stay on the same row");
+    checkRowAlignment(narrow.items.slice(0, 2), `${mode}, narrow figure/table row`);
     assert(narrow.contentWidth > narrow.viewportWidth, "The grid overflows horizontally");
     assert(narrow.items[2].width > narrow.viewportWidth, "Column spans are retained");
     assert(await page.evaluate(mode => {
@@ -126,7 +137,7 @@ try {
   const wide = await layout("reading");
   assert.equal(wide.columns, 2);
   assert.equal(wide.items.length, 3);
-  assert(Math.abs(wide.items[0].y - wide.items[1].y) < 1, "Figure and table share a row");
+  checkRowAlignment(wide.items.slice(0, 2), "Reading figure/table row");
   assert(wide.items[2].y > wide.items[0].y, "Spanning figure occupies the next row");
   assert(Math.abs(wide.items[2].width - (wide.items[1].x + wide.items[1].width - wide.items[0].x)) < 1, "span=2 fills both content-sized columns");
   assert(Math.abs(wide.items[1].x - wide.items[0].x - wide.items[0].width - 24) < 1, "lgap controls horizontal spacing");
@@ -157,6 +168,7 @@ try {
   const live = await layout("live");
   assert.equal(live.columns, 2);
   assert.equal(live.items.length, 3);
+  checkRowAlignment(live.items.slice(0, 2), "Live Preview figure/table row");
   assert(live.outside && live.standalone === 1);
   assert.equal(await page.evaluate(() => app.workspace.activeLeaf.view.editor.getValue()), source, "Rendering does not change Markdown");
   await page.locator(".markdown-source-view .ft-grid").scrollIntoViewIfNeeded();
@@ -328,11 +340,12 @@ try {
       assert.deepEqual(state.items.map(item => item.type), fixture.types, `${fixture.name}: original item order`);
       assert.deepEqual(state.items.map(item => item.caption), fixture.captions, `${fixture.name}: only explicit captions`);
       assert.equal(state.columns, 2);
-      assert(Math.abs(state.items[0].y - state.items[1].y) < 1, `${fixture.name} (${mode}): horizontal layout ${JSON.stringify(state)}`);
+      for (let i = 0; i < state.items.length; i += 2) {
+        checkRowAlignment(state.items.slice(i, i + 2), `${fixture.name} (${mode}), row ${i / 2 + 1}`);
+      }
       assert(state.items[1].x > state.items[0].x);
       assert(state.proseFullWidth, "Ordinary prose keeps a full row");
       if (fixture.name === "mixed") {
-        assert(Math.abs(state.items[2].y - state.items[3].y) < 1, "Bare and captioned images share the second row");
         assert(state.items[2].y > state.items[0].y);
       }
       if (fixture.name === "centered" || fixture.name === "plain-tables") {
@@ -352,6 +365,9 @@ try {
       await page.setViewportSize({ width: 600, height: 1000 });
       const narrow = await inspectItems(mode);
       assert.equal(narrow.columns, 2);
+      for (let i = 0; i < narrow.items.length; i += 2) {
+        checkRowAlignment(narrow.items.slice(i, i + 2), `${fixture.name} (${mode}, narrow), row ${i / 2 + 1}`);
+      }
       assert(narrow.scrollWidth > narrow.width, `${fixture.name}: narrow grids keep horizontal scrolling`);
       assert(Math.abs(narrow.items[0].x - narrow.x) < 1, "Overflow begins at the visible left edge");
       await page.setViewportSize({ width: 1280, height: 1000 });
@@ -406,13 +422,16 @@ try {
     const state = await inspectItems(mode);
     assert.deepEqual(state.items.map(item => item.type), ["figure", "figure", "figure", "figure", "table", "figure"]);
     for (let i = 0; i < state.items.length; i += 2) {
-      assert(Math.abs(state.items[i].y - state.items[i + 1].y) < 1, `${mode}: Mermaid and mixed content share rows`);
+      checkRowAlignment(state.items.slice(i, i + 2), `${mode}: Mermaid/mixed row ${i / 2 + 1}`);
     }
     await page.locator(`${selector} .ft-grid`).scrollIntoViewIfNeeded();
     await page.screenshot({ path: `test-results/mermaid-${mode}.png` });
     await page.setViewportSize({ width: 600, height: 1000 });
     const narrow = await inspectItems(mode);
     assert(narrow.scrollWidth > narrow.width, "Mermaid grids scroll in narrow panes");
+    for (let i = 0; i < narrow.items.length; i += 2) {
+      checkRowAlignment(narrow.items.slice(i, i + 2), `${mode}: narrow Mermaid/mixed row ${i / 2 + 1}`);
+    }
     await page.setViewportSize({ width: 1280, height: 1000 });
   }
   await page.evaluate(() => {

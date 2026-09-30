@@ -4,11 +4,11 @@ An Obsidian plugin that adds captions to figures and tables and arranges them si
 
 The plugin is currently in beta. Download it from [GitHub Releases](https://github.com/m13yama/obsidian_figs_and_tabs/releases).
 
-Version 0.3.2 makes Mermaid and other fenced code inside callouts follow Obsidian's native code-block styling, with a different background to distinguish nesting. It includes highlighted layout headers, Mermaid grids, and width controls from previous versions. Existing 0.2.0 and 0.3.x notes and settings continue to work. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
+Version 0.3.3 aligns figures to the bottom and tables to the top of each grid row, including their captions. This also applies to captionless images, Mermaid diagrams, and tables. It includes native code-block styling, highlighted layout headers, Mermaid grids, and width controls from previous versions. Existing 0.2.0 and 0.3.x notes and settings continue to work. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
 
 ## Installation
 
-1. Download `figures-and-tables-0.3.2.zip` from the Assets section of the [0.3.2 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.3.2) and extract it.
+1. Download `figures-and-tables-0.3.3.zip` from the Assets section of the [0.3.3 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.3.3) and extract it.
 2. Copy the extracted `figures-and-tables` folder into your vault's `.obsidian/plugins/` directory.
 3. In Obsidian, open **Settings → Community plugins** and enable **Figures and Tables**. Reload Obsidian if needed.
 
@@ -93,7 +93,7 @@ Separate tables or images with a line containing only `>`. A paragraph containin
 
 Separate options with spaces. Unknown options and invalid values are ignored without preventing the content from rendering. If the same option appears more than once, the last valid value is used.
 
-Each column uses the width required by its content and captions, and the grid as a whole is centered. Horizontal spacing (`lgap`) and vertical spacing (`vgap`) are independent. For example, `[!grid|cols=2 lgap=32 vgap=24]` sets 32px between columns and 24px between rows.
+Each column uses the width required by its content and captions, and the grid as a whole is centered. Within each row, figures align to the bottom and tables align to the top, including any captions. This also applies to captionless images, Mermaid diagrams, and tables. Horizontal spacing (`lgap`) and vertical spacing (`vgap`) are independent. For example, `[!grid|cols=2 lgap=32 vgap=24]` sets 32px between columns and 24px between rows.
 
 Narrow panes retain the configured columns and spans. When the grid does not fit, it starts at the left edge and scrolls horizontally. Images preserve their aspect ratio. Use Obsidian's image width syntax, such as `![[image.png|300]]`, to set a width explicitly.
 

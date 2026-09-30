@@ -1,24 +1,36 @@
-import { isKind, parseOptions } from "./options";
+import { isKind, parseOptions, parseWidth } from "./options";
 import type { Settings } from "./options";
 
 const CALLOUT = '.callout[data-callout="figure"], .callout[data-callout="table"], .callout[data-callout="grid"]';
 let nextCaptionId = 0;
 
-/** Image-only paragraphs are one item; prose with an inline image remains prose. */
-function containsOnlyImages(node: Node): boolean {
+/** Ignore native embed chrome, but never mistake a note containing prose for a diagram. */
+function isMermaidEmbed(element: Element): boolean {
+  if (!element.matches(".internal-embed.markdown-embed")) return false;
+  const content = element.querySelector(":scope > .markdown-embed-content > .markdown-preview-view > .markdown-preview-sizer");
+  return !!content?.querySelector(".mermaid") && Array.from(content.childNodes).every(node => {
+    if (node.nodeType === 1 && (node as Element).matches(".mod-header, .mod-footer, .markdown-preview-pusher")) return true;
+    return containsOnlyFigures(node);
+  });
+}
+
+/** Figure-only paragraphs are one item; prose with an inline image remains prose. */
+function containsOnlyFigures(node: Node): boolean {
   if (node.nodeType === 3) return !node.textContent?.trim();
   if (node.nodeType === 8) return true;
   if (node.nodeType !== 1) return false;
   const element = node as Element;
-  if (element.matches("img, .image-embed, br")) return true;
-  return element.matches("p, a, span") && Array.from(element.childNodes).every(containsOnlyImages);
+  if (element.matches("img, .image-embed, .mermaid, br")) return true;
+  if (element.matches(".internal-embed")) return isMermaidEmbed(element);
+  return element.matches("p, a, span, div.el-pre, div.el-p") && Array.from(element.childNodes).every(containsOnlyFigures);
 }
 
 function plainGridItemKind(element: Element): "table" | "figure" | null {
   if (element.matches("table")) return "table";
   if (element.matches("div.table-wrapper, div.el-table") && element.querySelector(":scope > table")) return "table";
-  const hasImage = element.matches("img, .image-embed") || element.querySelector("img, .image-embed") !== null;
-  return hasImage && containsOnlyImages(element) ? "figure" : null;
+  const figures = "img, .image-embed, .mermaid";
+  const hasFigure = element.matches(figures) || element.querySelector(figures) !== null;
+  return hasFigure && containsOnlyFigures(element) ? "figure" : null;
 }
 
 /** Restore only values that still belong to us, preserving changes by other plugins. */
@@ -36,7 +48,7 @@ class Patch {
     });
   }
 
-  style(element: HTMLElement, name: string, value: string): void {
+  style(element: HTMLElement | SVGElement, name: string, value: string): void {
     const old = element.style.getPropertyValue(name);
     const priority = element.style.getPropertyPriority(name);
     if (old === value && !priority) return;
@@ -147,6 +159,7 @@ export class CalloutRenderer {
           patch.className(child, "ft-grid-item");
           patch.className(child, `ft-grid-${itemKind}`);
         }
+        if (itemKind === "figure") this.decorateMermaid(child, element, patch);
         if (itemKind === "figure" || child.matches('.callout[data-callout="figure"]')) {
           const body = child.querySelector(":scope > .callout-content") ?? child;
           const images = body.matches("img") ? [body as HTMLImageElement] : body.querySelectorAll<HTMLImageElement>("img");
@@ -165,6 +178,7 @@ export class CalloutRenderer {
       ? parseOptions("grid", grid.getAttribute("data-callout-metadata") ?? "", settings).columns : 1;
     patch.style(element, "--ft-span", String(Math.min(options.span, columns)));
     patch.attribute(element, "data-ft-caption", options.caption);
+    if (kind === "figure") this.decorateMermaid(element, element, patch, options.width);
 
     const title = element.querySelector<HTMLElement>(":scope > .callout-title > .callout-title-inner");
     if (!title) return;
@@ -178,6 +192,32 @@ export class CalloutRenderer {
         if (table.closest(".callout") === element && !table.querySelector(":scope > caption")) {
           this.label(patch, table, title.id);
         }
+      }
+    }
+  }
+
+  private decorateMermaid(body: Element, callout: HTMLElement, patch: Patch, figureWidth?: number): void {
+    const diagrams = body.matches(".mermaid") ? [body] : body.querySelectorAll(".mermaid");
+    const inGrid = callout.closest('.callout[data-callout="grid"]') !== null;
+    for (const diagram of diagrams) {
+      if (diagram.closest(".callout") !== callout) continue;
+      const svg = diagram.querySelector<SVGSVGElement>(":scope > svg");
+      if (!svg) continue; // Mermaid renders asynchronously.
+      const embed = diagram.closest<HTMLElement>(".internal-embed.markdown-embed");
+      const sizedEmbed = embed && body.contains(embed) && isMermaidEmbed(embed) ? embed : null;
+      const explicitWidth = parseWidth(sizedEmbed?.getAttribute("width") ?? null) ?? figureWidth;
+      const viewBoxWidth = Number(svg.getAttribute("viewBox")?.trim().split(/[\s,]+/)[2]);
+      const intrinsicWidth = Number((svg.style.maxWidth || svg.getAttribute("width") || "").replace(/px$/, ""));
+      const width = explicitWidth ?? (viewBoxWidth > 0 ? viewBoxWidth : intrinsicWidth);
+      if (!Number.isFinite(width) || width <= 0) continue;
+      patch.className(diagram, "ft-mermaid");
+      // An explicit size also overrides Mermaid's inline maximum width.
+      patch.style(svg, "width", `${width}px`);
+      patch.style(svg, "max-width", inGrid ? "none" : "100%");
+      patch.style(svg, "height", "auto");
+      if (sizedEmbed) {
+        patch.className(sizedEmbed, "ft-mermaid-embed");
+        patch.style(sizedEmbed, "width", `${width}px`);
       }
     }
   }
@@ -209,7 +249,7 @@ export class CalloutController {
       characterData: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-callout", "data-callout-metadata"],
+      attributeFilter: ["data-callout", "data-callout-metadata", "width", "viewBox"],
     });
   }
 

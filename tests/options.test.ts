@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, loadSettings, parseOptions } from "../src/options";
+import { DEFAULT_SETTINGS, loadSettings, parseOptions, parseWidth } from "../src/options";
 
 describe("callout options", () => {
   it("keeps captions below figures and above tables by default", () => {
@@ -11,6 +11,17 @@ describe("callout options", () => {
     expect(parseOptions("grid", "cols=3 lgap=24 vgap=0", DEFAULT_SETTINGS)).toMatchObject({ columns: 3, lgap: 24, vgap: 0 });
     expect(parseOptions("grid", "lgap=0 vgap=96", DEFAULT_SETTINGS)).toMatchObject({ lgap: 0, vgap: 96 });
     expect(parseOptions("figure", "span=2 caption=top", DEFAULT_SETTINGS)).toMatchObject({ span: 2, caption: "top" });
+  });
+
+  it("accepts only positive pixel widths for Mermaid figures and embeds", () => {
+    expect(parseWidth("300")).toBe(300);
+    expect(parseOptions("figure", "width=300 width=0 caption=top", DEFAULT_SETTINGS)).toMatchObject({ width: 300, caption: "top" });
+    for (const value of [null, "", "0", "-1", "2.5", "300px", "100%", "300;display:none", "Infinity", "9007199254740992"]) {
+      expect(parseWidth(value)).toBeUndefined();
+      expect(parseOptions("figure", `width=${value}`, DEFAULT_SETTINGS).width).toBeUndefined();
+    }
+    expect(parseOptions("grid", "width=300", DEFAULT_SETTINGS).width).toBeUndefined();
+    expect(parseOptions("table", "width=300", DEFAULT_SETTINGS).width).toBeUndefined();
   });
 
   it("falls back per invalid option and never passes CSS from metadata through", () => {

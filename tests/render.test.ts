@@ -7,6 +7,11 @@ function callout(kind: string, title: string, content: string, metadata = ""): s
   return `<div class="callout" data-callout="${kind}" data-callout-metadata="${metadata}"><div class="callout-title"><div class="callout-icon"></div><div class="callout-title-inner">${title}</div></div><div class="callout-content">${content}</div></div>`;
 }
 
+const mermaid = '<div class="mermaid"><svg viewBox="0 0 200 100" width="100%" style="max-width: 200px"><g><text>Diagram</text></g></svg></div>';
+function mermaidEmbed(content = mermaid, width = "300"): string {
+  return `<div class="internal-embed markdown-embed" width="${width}"><div class="embed-title">Diagram</div><div class="markdown-embed-content"><div class="markdown-preview-view"><div class="markdown-preview-sizer"><div class="markdown-preview-pusher"></div><div class="mod-header">Native controls</div><div class="el-pre">${content}</div><div class="mod-footer"></div></div></div></div></div>`;
+}
+
 const renderers: CalloutRenderer[] = [];
 function setup(html: string) {
   const root = document.createElement("div");
@@ -159,6 +164,69 @@ describe("native callout decoration", () => {
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(element.classList.contains("ft-callout")).toBe(false);
     expect(root.querySelector("table")?.hasAttribute("aria-labelledby")).toBe(false);
+  });
+
+  it("mixes bare Mermaid blocks and diagram embeds with captioned figures, images and tables", () => {
+    const { root, controller, renderer } = setup(callout("grid", "Grid",
+      mermaid + mermaidEmbed() + callout("figure", "Caption", mermaidEmbed(mermaid, "400"), "width=250") +
+      '<p><img src="a.svg"></p><table><tr><td>42</td></tr></table>' +
+      mermaidEmbed(mermaid + "<p>Explanatory text</p>") + '<pre><code>graph LR; A --> B</code></pre>'));
+    const content = root.querySelector(".ft-grid > .callout-content")!;
+    expect(content.querySelectorAll(":scope > .ft-grid-item")).toHaveLength(4);
+    expect(content.children[5]!.classList.contains("ft-grid-item")).toBe(false);
+    expect(content.children[6]!.classList.contains("ft-grid-item")).toBe(false);
+    const svgs = Array.from(root.querySelectorAll(".mermaid > svg")) as SVGSVGElement[];
+    let clicked = false;
+    svgs[0]!.addEventListener("click", () => clicked = true);
+    controller.refresh();
+    expect(Array.from(root.querySelectorAll(".mermaid > svg"))).toEqual(svgs);
+    svgs[0]!.dispatchEvent(new Event("click"));
+    expect(clicked).toBe(true);
+    expect(svgs.map(svg => svg.style.width)).toEqual(["200px", "300px", "400px", ""]);
+    expect(svgs.slice(0, 3).every(svg => svg.style.maxWidth === "none" && svg.style.height === "auto")).toBe(true);
+    renderer.destroy();
+    expect(root.querySelector(".ft-mermaid, .ft-mermaid-embed, .ft-grid-item")).toBeNull();
+    expect(svgs.every(svg => svg.style.width === "" && svg.style.maxWidth === "200px" && svg.style.height === "")).toBe(true);
+  });
+
+  it("sizes inline Mermaid in figures, while leaving ordinary SVG and unrelated callouts alone", async () => {
+    const { root, renderer } = setup(callout("figure", "Caption", mermaid + '<svg viewBox="0 0 50 50"></svg>', "width=320") +
+      callout("note", "Note", mermaid) + mermaidEmbed());
+    const figure = root.querySelector(".ft-figure")!;
+    const svg = figure.querySelector<SVGSVGElement>(".mermaid svg")!;
+    expect(svg.style.width).toBe("320px");
+    expect(svg.style.maxWidth).toBe("100%");
+    expect(root.querySelectorAll(".ft-mermaid")).toHaveLength(1);
+    expect(figure.querySelector<SVGSVGElement>(".callout-content > svg")!.style.width).toBe("");
+    figure.setAttribute("data-callout-metadata", "width=invalid");
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(svg.style.width).toBe("200px");
+    svg.style.width = "450px"; // Another plugin takes ownership before unload.
+    renderer.destroy();
+    expect(svg.style.width).toBe("450px");
+  });
+
+  it("reacts to delayed Mermaid rendering, width edits and note content changes", async () => {
+    const { root } = setup(callout("grid", "Grid", mermaidEmbed('<div class="mermaid"></div>')));
+    const embed = root.querySelector<HTMLElement>(".internal-embed")!;
+    const diagram = root.querySelector(".mermaid")!;
+    diagram.innerHTML = '<svg viewBox="0 0 200 100" width="200"></svg>';
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const svg = diagram.querySelector("svg")!;
+    expect(svg.style.width).toBe("300px");
+    expect(embed.style.width).toBe("300px");
+    embed.setAttribute("width", "420");
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(svg.style.width).toBe("420px");
+    embed.removeAttribute("width");
+    svg.setAttribute("viewBox", "0 0 240 100");
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(svg.style.width).toBe("240px");
+    diagram.insertAdjacentHTML("afterend", "<p>Ordinary prose</p>");
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(embed.classList.contains("ft-grid-item")).toBe(false);
+    expect(embed.style.width).toBe("");
+    expect(svg.style.width).toBe("");
   });
 
   it("retains decorations until all overlapping reading/editor controllers release them", () => {

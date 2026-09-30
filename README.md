@@ -1,14 +1,14 @@
 # Figures and Tables
 
-An Obsidian plugin that adds captions to figures and tables and arranges them side by side or in grids using callouts. It supports Reading view and Live Preview while preserving your original image links and Markdown tables.
+An Obsidian plugin that adds captions to figures and tables and arranges them side by side or in grids using callouts. It supports images, Mermaid diagrams, and Markdown tables in Reading view and Live Preview while preserving their native rendering and links.
 
 The plugin is currently in beta. Download it from [GitHub Releases](https://github.com/m13yama/obsidian_figs_and_tabs/releases).
 
-Version 0.2.0 adds captionless and mixed content, centered grids with columns sized to their content, and separate horizontal and vertical spacing. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
+Version 0.3.0 adds Mermaid diagrams to grids and supports widths such as `![[fig_name|300]]` for diagram embeds and `width=300` for inline Mermaid figures. Existing 0.2.0 notes and settings continue to work. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
 
 ## Installation
 
-1. Download `figures-and-tables-0.2.0.zip` from the Assets section of the [0.2.0 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.2.0) and extract it.
+1. Download `figures-and-tables-0.3.0.zip` from the Assets section of the [0.3.0 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.3.0) and extract it.
 2. Copy the extracted `figures-and-tables` folder into your vault's `.obsidian/plugins/` directory.
 3. In Obsidian, open **Settings → Community plugins** and enable **Figures and Tables**. Reload Obsidian if needed.
 
@@ -89,6 +89,7 @@ Separate tables or images with a line containing only `>`. A paragraph containin
 | `vgap=16` | grid | Vertical spacing in pixels, integer from 0 to 96 | Default vertical spacing setting (initially 16) |
 | `span=2` | figure / table | Integer from 1 to 6 | 1 column; values above the parent grid's column count are clamped |
 | `caption=bottom` | figure / table | `top` or `bottom` | Caption position setting |
+| `width=300` | figure | Positive integer in pixels; applies to Mermaid diagrams | Diagram's intrinsic width |
 
 Separate options with spaces. Unknown options and invalid values are ignored without preventing the content from rendering. If the same option appears more than once, the last valid value is used.
 
@@ -97,6 +98,36 @@ Each column uses the width required by its content and captions, and the grid as
 Narrow panes retain the configured columns and spans. When the grid does not fit, it starts at the left edge and scrolls horizontally. Images preserve their aspect ratio. Use Obsidian's image width syntax, such as `![[image.png|300]]`, to set a width explicitly.
 
 The old `gap` option has been removed. Neither the old syntax nor the saved `gap` setting is migrated. Use `lgap` and `vgap` in your notes.
+
+### Mermaid diagrams
+
+Mermaid code blocks can occupy a grid cell directly, or be wrapped in a `figure` callout for a caption. They can share rows with images and tables.
+
+````markdown
+> [!grid|cols=2 lgap=16 vgap=16]
+> ```mermaid
+> graph LR
+>   A[Input] --> B[Output]
+> ```
+>
+> > [!figure|width=300] Processing flow
+> > ```mermaid
+> > graph TD
+> >   A[Read] --> B[Process] --> C[Save]
+> > ```
+````
+
+To reuse a diagram, put its Mermaid code block in a note such as `fig_name.md`. Inside a `grid` or `figure`, use Obsidian's image-style width syntax, `![[fig_name|300]]`, to display it at 300px wide. The leading `!` embeds the content; `[[fig_name|300]]` by itself remains an ordinary link. This plugin applies sizing to diagram-only note or block embeds; notes containing explanatory text retain their normal embed layout.
+
+```markdown
+> [!grid|cols=2]
+> ![[fig_name|300]]
+>
+> > [!figure] Another diagram
+> > ![[fig_name#^flow|450]]
+```
+
+For the block embed, add `^flow` on the line immediately after the Mermaid code block's closing fence in `fig_name.md`. For a diagram written directly inside a `figure`, use `[!figure|width=300]`. An embed's own width takes priority over the figure's width. Widths must be positive integers in pixels; invalid values are ignored. Without a width, diagrams use their intrinsic size. Mermaid preserves its aspect ratio, scales down to fit standalone figures, and retains its requested width in horizontally scrolling grids.
 
 ### Where a grid ends
 
@@ -127,6 +158,7 @@ Copy the Markdown notes and both SVG files from `examples/` into the same vault:
 
 - [Figures and grids](examples/figures-and-grids.md): standalone figures and tables, column spans, a 2×2 grid, caption positions, and invalid option fallbacks.
 - [Captionless and mixed content](examples/captionless-and-mixed.md): captionless tables and images, mixed captions, independent spacing, and image widths.
+- [Mermaid grids](examples/mermaid-and-grids.md): inline diagrams, captions, and image-style widths for note and block embeds. Copy [example-mermaid.md](examples/example-mermaid.md) as well.
 
 ## Development and verification
 
@@ -162,7 +194,7 @@ Rendering does not rewrite note content. The plugin adds attributes and styles w
 
 ### Current scope
 
-Verified with Obsidian 1.12.7 on Linux using the default theme: Reading view and Live Preview, captionless and mixed content, centered grids sized to their content, independent spacing, grid boundaries, caption positions, spans, horizontal scrolling in narrow panes, explicit image widths, wide tables, table edits, commands and Undo, and disabling/re-enabling the plugin. Figure and table styles are compared with ordinary note content in light and dark modes and with customized table border colors. All 27 unit tests for options, editing transformations, and the rendering lifecycle pass.
+Verified with Obsidian 1.12.7 on Linux using the default theme: Reading view and Live Preview, captionless and mixed content, centered grids sized to their content, independent spacing, grid boundaries, caption positions, spans, horizontal scrolling in narrow panes, explicit image widths, Mermaid code blocks and note/block embeds with independent widths, Mermaid width edits and aspect ratios, wide tables, table edits, commands and Undo, and disabling/re-enabling the plugin. Figure and table styles are compared with ordinary note content in light and dark modes and with customized table border colors. All 31 unit tests pass, covering options, editing transformations, and the rendering lifecycle, including Mermaid width validation, delayed rendering, and cleanup.
 
 Implemented features include captions, grids, column spans, layout settings, and editing commands. Automatic numbering, cross-references, subfigure labels such as (a)/(b), and vault-wide lists of figures and tables are not implemented. Print CSS is included, but PDF export, physical mobile devices, and community themes still need verification.
 

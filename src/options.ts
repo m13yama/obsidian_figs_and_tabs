@@ -46,6 +46,14 @@ export interface CalloutOptions {
   vgap: number;
   span: number;
   caption: CaptionPosition;
+  width?: number;
+}
+
+/** Obsidian's embed width attribute is a positive pixel count, never CSS. */
+export function parseWidth(value: string | null): number | undefined {
+  if (!value || !/^\d+$/.test(value)) return undefined;
+  const width = Number(value);
+  return Number.isSafeInteger(width) && width > 0 ? width : undefined;
 }
 
 /** Metadata is a small key=value language; never pass arbitrary text to CSS. */
@@ -69,6 +77,7 @@ export function parseOptions(kind: CalloutKind, metadata: string, settings: Sett
       if (kind === "grid" && key === "lgap" && validInteger(number, 0, 96)) result.lgap = number;
       if (kind === "grid" && key === "vgap" && validInteger(number, 0, 96)) result.vgap = number;
       if (kind !== "grid" && key === "span" && validInteger(number, 1, 6)) result.span = number;
+      if (kind === "figure" && key === "width" && parseWidth(value) !== undefined) result.width = number;
     }
   }
   return result;

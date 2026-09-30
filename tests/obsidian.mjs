@@ -270,7 +270,9 @@ try {
 
   async function inspectItems(mode) {
     return page.evaluate(mode => {
-      const root = document.querySelector(mode === "reading" ? ".markdown-preview-view" : ".markdown-source-view");
+      const root = document.querySelector(mode === "reading"
+        ? ".workspace-leaf.mod-active .markdown-reading-view > .markdown-preview-view"
+        : ".workspace-leaf.mod-active .markdown-source-view");
       const content = root.querySelector(".ft-grid > .callout-content");
       const items = [...content.querySelectorAll(":scope > :is(.ft-callout, .ft-grid-item)")];
       const prose = [...content.querySelectorAll(":scope > p")].find(p => p.textContent.startsWith("Explanatory text"));
@@ -357,6 +359,72 @@ try {
     }
   }
 
+  // Mermaid keeps native SVGs, accepts image-style embed widths, and shares grid rows.
+  const mermaidSource = [
+    "> [!grid|cols=2 lgap=20 vgap=16]",
+    "> ```mermaid", "> graph LR", "> A --> B", "> ```", ">",
+    "> > [!figure|width=320] Inline diagram",
+    "> > ```mermaid", "> > graph LR", "> > A --> B", "> > ```", ">",
+    "> ![[mermaid-diagram|180]]", ">",
+    "> > [!figure] Embedded block", "> > ![[mermaid-diagram#^flow|420]]", ">",
+    "> | Item | Value |", "> | --- | --- |", "> | A | 1 |", ">",
+    "> ![[example-apparatus.svg|120]]", "", "Editing position",
+  ].join("\n");
+  await page.evaluate(async source => {
+    await app.vault.create("mermaid-diagram.md", "```mermaid\ngraph LR\nA[Start] --> B[Finish]\n```\n^flow");
+    const file = await app.vault.create("mermaid-grid.md", source);
+    await app.workspace.getLeaf(false).openFile(file, { state: { mode: "preview" } });
+  }, mermaidSource);
+  for (const mode of ["reading", "live"]) {
+    if (mode === "live") await page.evaluate(async () => {
+      const leaf = app.workspace.activeLeaf;
+      await leaf.setViewState({ type: "markdown", state: { file: "mermaid-grid.md", mode: "source", source: false } });
+      leaf.view.editor.setCursor({ line: leaf.view.editor.lineCount() - 1, ch: 0 });
+    });
+    const selector = mode === "reading"
+      ? ".workspace-leaf.mod-active .markdown-reading-view > .markdown-preview-view"
+      : ".workspace-leaf.mod-active .markdown-source-view";
+    await page.waitForFunction(selector => {
+      const grid = document.querySelector(`${selector} .ft-grid`);
+      return grid?.querySelectorAll(".ft-mermaid > svg").length === 4 &&
+        grid.querySelectorAll(":scope > .callout-content > :is(.ft-callout, .ft-grid-item)").length === 6;
+    }, selector);
+    const diagrams = await page.evaluate(selector => [...document.querySelectorAll(`${selector} .ft-grid .ft-mermaid > svg`)].map(svg => ({
+      width: svg.getBoundingClientRect().width, height: svg.getBoundingClientRect().height,
+      ratio: svg.viewBox.baseVal.width / svg.viewBox.baseVal.height,
+    })), selector);
+    assert.deepEqual(diagrams.slice(1).map(svg => Math.round(svg.width)), [320, 180, 420], `${mode}: inline, note, and block widths`);
+    for (const svg of diagrams) assert(Math.abs(svg.width / svg.height - svg.ratio) < 0.01, "Mermaid preserves its aspect ratio");
+    assert(await page.evaluate(selector => [...document.querySelectorAll(`${selector} .ft-mermaid-embed`)].every(embed => {
+      const svg = embed.querySelector(".mermaid > svg").getBoundingClientRect();
+      const preview = embed.querySelector(".markdown-preview-view");
+      const bounds = preview.getBoundingClientRect();
+      return svg.left >= bounds.left - 1 && svg.right <= bounds.right + 1 && preview.scrollWidth <= preview.clientWidth;
+    }), selector), `${mode}: embed padding does not clip Mermaid or create an inner scrollbar`);
+    const state = await inspectItems(mode);
+    assert.deepEqual(state.items.map(item => item.type), ["figure", "figure", "figure", "figure", "table", "figure"]);
+    for (let i = 0; i < state.items.length; i += 2) {
+      assert(Math.abs(state.items[i].y - state.items[i + 1].y) < 1, `${mode}: Mermaid and mixed content share rows`);
+    }
+    await page.locator(`${selector} .ft-grid`).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `test-results/mermaid-${mode}.png` });
+    await page.setViewportSize({ width: 600, height: 1000 });
+    const narrow = await inspectItems(mode);
+    assert(narrow.scrollWidth > narrow.width, "Mermaid grids scroll in narrow panes");
+    await page.setViewportSize({ width: 1280, height: 1000 });
+  }
+  await page.evaluate(() => {
+    const editor = app.workspace.activeLeaf.view.editor;
+    editor.setValue(editor.getValue().replace("mermaid-diagram|180", "mermaid-diagram|260"));
+    editor.setCursor({ line: editor.lineCount() - 1, ch: 0 });
+  });
+  await page.waitForFunction(() => document.querySelector('.markdown-source-view .ft-grid .internal-embed[width="260"] .mermaid > svg')?.getBoundingClientRect().width === 260);
+  assert.equal(await page.evaluate(() => app.workspace.activeLeaf.view.editor.getValue()), mermaidSource.replace("mermaid-diagram|180", "mermaid-diagram|260"));
+  await page.evaluate(async () => { await app.plugins.disablePlugin("figures-and-tables"); });
+  assert.equal(await page.locator(".ft-mermaid, .ft-mermaid-embed").count(), 0, "Unloading restores native Mermaid diagrams");
+  await page.evaluate(async () => { await app.plugins.enablePlugin("figures-and-tables"); });
+  await page.waitForFunction(() => document.querySelectorAll(".markdown-source-view .ft-mermaid > svg").length === 4);
+
   // Compare against actual body tables/images, including a note-level theme override.
   const bodyTable = "| Item | Value |\n| --- | --- |\n| Temperature | 25°C |";
   const styled = [
@@ -435,7 +503,7 @@ try {
   await page.waitForFunction(() => document.querySelectorAll(".ft-callout").length > 0);
   assert.deepEqual(errors, [], "No renderer errors");
   const version = /Obsidian ([\d.]+)/.exec(await page.title())?.[1] ?? "unknown";
-  console.log(`PASS Obsidian ${version}: reading, Live Preview, bare/mixed items, centered content widths, lgap/vgap, image sizes, body styles in light/dark/custom colors, boundaries, captions, spans, horizontal scroll, table edit, command/undo, unload/reload`);
+  console.log(`PASS Obsidian ${version}: reading, Live Preview, bare/mixed items, centered content widths, lgap/vgap, image sizes, Mermaid blocks/note embeds/block embeds/width edits, body styles in light/dark/custom colors, boundaries, captions, spans, horizontal scroll, table edit, command/undo, unload/reload`);
   console.log(`Screenshots: test-results/. Disposable vault: ${vault}`);
 } catch (error) {
   const page = browser?.contexts()[0]?.pages()[0];

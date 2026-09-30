@@ -155,6 +155,37 @@ table.ft-grid-table {
   text-align: center;
 }
 
+.ft-mermaid {
+  text-align: center;
+}
+
+/* Diagram-only note/block embeds behave like figures and keep their native links. */
+.ft-mermaid-embed.markdown-embed {
+  display: block;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 0;
+  border: 0;
+}
+
+.ft-mermaid-embed > .embed-title {
+  display: none;
+}
+
+.ft-mermaid-embed > .markdown-embed-content {
+  max-height: none;
+  overflow: visible;
+}
+
+.ft-mermaid-embed > .markdown-embed-content > .markdown-preview-view {
+  padding: 0;
+  overflow: visible;
+}
+
+.ft-grid .ft-mermaid-embed {
+  max-width: none;
+}
+
 /* Ordinary content is kept visible and occupies a full row. */
 .ft-grid > .callout-content > :not(.ft-callout, .ft-grid-item) {
   grid-column: 1 / -1;

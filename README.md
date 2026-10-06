@@ -4,11 +4,11 @@ An Obsidian plugin that adds captions to figures and tables and arranges them si
 
 The plugin is currently in beta. Download it from [GitHub Releases](https://github.com/m13yama/obsidian_figs_and_tabs/releases).
 
-Version 0.3.3 aligns figures to the bottom and tables to the top of each grid row, including their captions. This also applies to captionless images, Mermaid diagrams, and tables. It includes native code-block styling, highlighted layout headers, Mermaid grids, and width controls from previous versions. Existing 0.2.0 and 0.3.x notes and settings continue to work. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
+Version 0.3.4 makes figure and table captions inherit the surrounding note's text color. It includes figure bottom alignment, table top alignment, native code-block styling, highlighted layout headers, Mermaid grids, and width controls from previous versions. Existing 0.2.0 and 0.3.x notes and settings continue to work. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
 
 ## Installation
 
-1. Download `figures-and-tables-0.3.3.zip` from the Assets section of the [0.3.3 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.3.3) and extract it.
+1. Download `figures-and-tables-0.3.4.zip` from the Assets section of the [0.3.4 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.3.4) and extract it.
 2. Copy the extracted `figures-and-tables` folder into your vault's `.obsidian/plugins/` directory.
 3. In Obsidian, open **Settings → Community plugins** and enable **Figures and Tables**. Reload Obsidian if needed.
 
@@ -27,7 +27,7 @@ Only `main.js`, `manifest.json`, and `styles.css` are required. You can also dow
 > | B | 95.3% |
 ```
 
-Figure captions appear below the content and table captions above it. Both are centered. Captions support the formatting Obsidian allows in callout titles, including bold text, links, and inline math. Images can also use standard Markdown syntax: `![Alt text](images/apparatus.png)`. Alt text and captions are independent.
+Figure captions appear below the content and table captions above it. Both are centered and use the same text color as the surrounding note. Captions support the formatting Obsidian allows in callout titles, including bold text, links, and inline math. Images can also use standard Markdown syntax: `![Alt text](images/apparatus.png)`. Alt text and captions are independent.
 
 The plugin removes callout backgrounds, borders, icons, and text tinting. Table borders inherit the note's settings, and figures and tables use the same theme styles as the rest of the note.
 

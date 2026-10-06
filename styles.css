@@ -78,7 +78,7 @@
   background: transparent;
   border: 0;
   padding: 0;
-  color: var(--text-muted);
+  color: inherit;
   font-size: var(--font-small);
   font-weight: var(--font-normal);
   line-height: 1.5;

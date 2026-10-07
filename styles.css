@@ -164,6 +164,8 @@ video.ft-grid-figure {
 
 /* Obsidian does not apply image-style embed dimensions to videos itself. */
 video.ft-video {
+  display: block;
+  margin-inline: auto;
   width: min(100%, var(--ft-video-width)) !important;
   max-width: 100%;
   height: auto !important;

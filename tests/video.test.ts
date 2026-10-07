@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import {
   dimensionsFromVideoElement,
   extractVideoEmbeds,
@@ -41,6 +42,21 @@ describe("video size syntax", () => {
 });
 
 describe("video rendering", () => {
+  it("centers sized standalone videos", () => {
+    const style = document.createElement("style");
+    style.textContent = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+    document.head.append(style);
+    const video = document.createElement("video");
+    video.className = "ft-video";
+    document.body.append(video);
+
+    const computed = getComputedStyle(video);
+    expect(computed.display).toBe("block");
+    expect(computed.marginInline).toBe("auto");
+
+    style.remove();
+  });
+
   it("sizes videos without replacing native nodes and cleans up on unload", () => {
     const root = document.createElement("div");
     root.innerHTML = "<p><video></video></p><p><video></video></p>";

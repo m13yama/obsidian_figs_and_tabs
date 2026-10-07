@@ -4,11 +4,11 @@ An Obsidian plugin that adds captions to figures and tables and arranges them si
 
 The plugin is currently in beta. Download it from [GitHub Releases](https://github.com/m13yama/obsidian_figs_and_tabs/releases).
 
-Version 0.4.0 adds image-style sizing for embedded videos and lets captioned or captionless videos participate in grids. It includes the caption, alignment, source editing, Mermaid, and layout features from previous versions. Existing 0.2.0 and 0.3.x notes and settings continue to work. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
+Version 0.4.1 centers sized standalone videos. Version 0.4.0 added image-style sizing for embedded videos and let captioned or captionless videos participate in grids. The plugin includes the caption, alignment, source editing, Mermaid, and layout features from previous versions. Existing 0.2.0 and 0.3.x notes and settings continue to work. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
 
 ## Installation
 
-1. Download `figures-and-tables-0.4.0.zip` from the Assets section of the [0.4.0 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.4.0) and extract it.
+1. Download `figures-and-tables-0.4.1.zip` from the Assets section of the [0.4.1 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.4.1) and extract it.
 2. Copy the extracted `figures-and-tables` folder into your vault's `.obsidian/plugins/` directory.
 3. In Obsidian, open **Settings → Community plugins** and enable **Figures and Tables**. Reload Obsidian if needed.
 
@@ -42,7 +42,7 @@ Videos can be used anywhere an image can be used, including inside a `figure`. U
 > ![[experiment.mp4|640]]
 ```
 
-Use `widthxheight` to set both the displayed width and aspect ratio. A standalone video scales down when its container is narrower while preserving that ratio.
+Use `widthxheight` to set both the displayed width and aspect ratio. A standalone sized video is centered and scales down when its container is narrower while preserving that ratio.
 
 ```markdown
 ![[experiment.mp4|640x360]]

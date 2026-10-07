@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - manifest.json
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./manifest.json').version")
+          package_version=$(node -p "require('./package.json').version")
+          minimum_version=$(node -p "require('./versions.json')[process.argv[1]] || ''" "$version")
+
+          test "$version" = "$package_version"
+          test -n "$minimum_version"
+
+          if gh release view "$version" >/dev/null 2>&1; then
+            echo "Release $version already exists; nothing to publish."
+            exit 0
+          fi
+
+          (cd dist && zip -r "figures-and-tables-$version.zip" figures-and-tables)
+
+          gh release create "$version" \
+            "dist/figures-and-tables-$version.zip" \
+            "dist/figures-and-tables/main.js" \
+            "dist/figures-and-tables/manifest.json" \
+            "dist/figures-and-tables/styles.css" \
+            --target "$GITHUB_SHA" \
+            --title "$version (beta)" \
+            --notes-file "docs/releases/$version.md" \
+            --prerelease

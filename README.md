@@ -1,14 +1,14 @@
 # Figures and Tables
 
-An Obsidian plugin that adds captions to figures and tables and arranges them side by side or in grids using callouts. It supports images, Mermaid diagrams, and Markdown tables in Reading view and Live Preview while preserving their native rendering and links.
+An Obsidian plugin that adds captions to figures and tables and arranges them side by side or in grids using callouts. It supports images, videos, Mermaid diagrams, and Markdown tables in Reading view and Live Preview while preserving their native rendering and links.
 
 The plugin is currently in beta. Download it from [GitHub Releases](https://github.com/m13yama/obsidian_figs_and_tabs/releases).
 
-Version 0.3.4 makes figure and table captions inherit the surrounding note's text color. It includes figure bottom alignment, table top alignment, native code-block styling, highlighted layout headers, Mermaid grids, and width controls from previous versions. Existing 0.2.0 and 0.3.x notes and settings continue to work. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
+Version 0.4.0 adds image-style sizing for embedded videos and lets captioned or captionless videos participate in grids. It includes the caption, alignment, source editing, Mermaid, and layout features from previous versions. Existing 0.2.0 and 0.3.x notes and settings continue to work. When upgrading from 0.1.0, replace `gap=16` in your notes with `lgap=16 vgap=16`. The old saved `gap` setting is not migrated.
 
 ## Installation
 
-1. Download `figures-and-tables-0.3.4.zip` from the Assets section of the [0.3.4 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.3.4) and extract it.
+1. Download `figures-and-tables-0.4.0.zip` from the Assets section of the [0.4.0 beta release](https://github.com/m13yama/obsidian_figs_and_tabs/releases/tag/0.4.0) and extract it.
 2. Copy the extracted `figures-and-tables` folder into your vault's `.obsidian/plugins/` directory.
 3. In Obsidian, open **Settings → Community plugins** and enable **Figures and Tables**. Reload Obsidian if needed.
 
@@ -33,6 +33,23 @@ The plugin removes callout backgrounds, borders, icons, and text tinting. Table 
 
 Use `[!figure|caption=top]` or `[!table|caption=bottom]` to override the caption position for an individual item. You can change the default position for figures and tables separately in the plugin settings.
 
+### Videos and video sizes
+
+Videos can be used anywhere an image can be used, including inside a `figure`. Use Obsidian's image-style embed syntax to set the width in pixels:
+
+```markdown
+> [!figure] Experiment recording
+> ![[experiment.mp4|640]]
+```
+
+Use `widthxheight` to set both the displayed width and aspect ratio. A standalone video scales down when its container is narrower while preserving that ratio.
+
+```markdown
+![[experiment.mp4|640x360]]
+```
+
+The supported extensions are `mp4`, `webm`, `ogv`, `mov`, and `mkv`. Video sizing works in Reading view and Live Preview; no separate Movie Size plugin is required.
+
 ## Grids
 
 ```markdown
@@ -51,11 +68,11 @@ Use `[!figure|caption=top]` or `[!table|caption=bottom]` to override the caption
 This paragraph is outside the grid.
 ```
 
-This places a figure and a table in the first row, followed by a figure spanning both columns. Four items without `span` form a 2×2 grid. Items follow their order in the Markdown source. Figures and tables that are direct children of the grid occupy cells; other content occupies a full row.
+This places a figure and a table in the first row, followed by a figure spanning both columns. Four items without `span` form a 2×2 grid. Items follow their order in the Markdown source. Figures and tables that are direct children of the grid occupy cells; other content occupies a full row. A video can replace an image in any figure.
 
 ### Captionless and mixed content
 
-Tables without captions can be written directly inside a `grid`, without a `table` callout. They can be mixed with captioned tables and images, in source order.
+Tables without captions can be written directly inside a `grid`, without a `table` callout. They can be mixed with captioned tables, images, and videos in source order.
 
 ```markdown
 > [!grid|cols=2 lgap=16 vgap=16]
@@ -72,13 +89,15 @@ Tables without captions can be written directly inside a `grid`, without a `tabl
 >
 > ![[apparatus.png]]
 >
+> ![[experiment.mp4|320x180]]
+>
 > > [!figure] Measurement results
 > > ![[results.png]]
 ```
 
-The first row contains a captionless table and a captioned table. The second contains a captionless image and a captioned figure.
+The first row contains a captionless table and a captioned table. The following cells contain a captionless image, a captionless video, and a captioned figure.
 
-Separate tables or images with a line containing only `>`. A paragraph containing only images is one grid item: multiple images in the same paragraph remain together. A paragraph containing both text and images is treated as ordinary content and occupies a full row. Captionless items each use one column. To span columns, use a `figure` or `table` callout with `span`.
+Separate tables, images, or videos with a line containing only `>`. A paragraph containing only visual media is one grid item: multiple embeds in the same paragraph remain together. A paragraph containing both text and media is treated as ordinary content and occupies a full row. Captionless items each use one column. To span columns, use a `figure` or `table` callout with `span`.
 
 ### Layout options
 
@@ -93,9 +112,9 @@ Separate tables or images with a line containing only `>`. A paragraph containin
 
 Separate options with spaces. Unknown options and invalid values are ignored without preventing the content from rendering. If the same option appears more than once, the last valid value is used.
 
-Each column uses the width required by its content and captions, and the grid as a whole is centered. Within each row, figures align to the bottom and tables align to the top, including any captions. This also applies to captionless images, Mermaid diagrams, and tables. Horizontal spacing (`lgap`) and vertical spacing (`vgap`) are independent. For example, `[!grid|cols=2 lgap=32 vgap=24]` sets 32px between columns and 24px between rows.
+Each column uses the width required by its content and captions, and the grid as a whole is centered. Within each row, figures align to the bottom and tables align to the top, including any captions. This also applies to captionless images, videos, Mermaid diagrams, and tables. Horizontal spacing (`lgap`) and vertical spacing (`vgap`) are independent. For example, `[!grid|cols=2 lgap=32 vgap=24]` sets 32px between columns and 24px between rows.
 
-Narrow panes retain the configured columns and spans. When the grid does not fit, it starts at the left edge and scrolls horizontally. Images preserve their aspect ratio. Use Obsidian's image width syntax, such as `![[image.png|300]]`, to set a width explicitly.
+Narrow panes retain the configured columns and spans. When the grid does not fit, it starts at the left edge and scrolls horizontally. Images and videos preserve their aspect ratio. Use Obsidian's image width syntax, such as `![[image.png|300]]` or `![[movie.mp4|640x360]]`, to set a size explicitly.
 
 The old `gap` option has been removed. Neither the old syntax nor the saved `gap` setting is migrated. Use `lgap` and `vgap` in your notes.
 
@@ -186,18 +205,19 @@ On Linux, the test launches `/opt/Obsidian/obsidian`. Set `OBSIDIAN_BIN` to use 
 ### Implementation
 
 - `src/options.ts`: settings and callout option validation.
-- `src/render.ts`: decoration of existing DOM nodes, accessible caption associations, change observation, and cleanup.
-- `src/editor.ts`: a CodeMirror 6 extension that watches native Live Preview callouts and registers source styling.
+- `src/render.ts`: decoration of existing DOM nodes, accessible caption associations, grid-item detection, change observation, and cleanup.
+- `src/video.ts`: video embed parsing and non-destructive sizing in Reading view and Live Preview.
+- `src/editor.ts`: a CodeMirror 6 extension that watches native Live Preview callouts and videos and registers source styling.
 - `src/source.ts`: line decorations for editable layout headers, quoted content, and fenced code, with boundaries preserved across the viewport.
 - `src/commands.ts`: line-based Markdown transformations that preserve quotation depth and surrounding boundaries.
 - `src/main.ts`: plugin registration, the Reading view post processor, commands, and settings.
 - `styles.css`: CSS Grid layout, caption placement, and styles for narrow panes and printing.
 
-Rendering does not rewrite note content. The plugin adds attributes and styles while preserving image, table, and link nodes and their event handlers. Observation is limited to rendered sections and editor content. Attributes added by the plugin are excluded from observation to avoid update loops. Disabling the plugin removes its decorations.
+Rendering does not rewrite note content. The plugin adds attributes and styles while preserving image, video, table, and link nodes and their event handlers. Observation is limited to rendered sections and editor content. Attributes added by the plugin are excluded from observation to avoid update loops. Disabling the plugin removes its decorations.
 
 ### Current scope
 
-Verified with Obsidian 1.12.7 on Linux using the default theme: Reading view and Live Preview, captionless and mixed content, centered grids sized to their content, independent spacing, grid boundaries, caption positions, spans, horizontal scrolling in narrow panes, explicit image widths, Mermaid code blocks and note/block embeds with independent widths, Mermaid width edits and aspect ratios, wide tables, table edits, commands and Undo, and disabling/re-enabling the plugin. Figure and table styles are compared with ordinary note content in light and dark modes and with customized table border colors. Source mode and expanded Live Preview callouts are checked in light and dark themes, including native code-block font, spacing, and corner comparisons, distinct nested backgrounds, ordinary quote and inline formatting preservation, typing, Undo, and cleanup. All 37 unit tests pass, covering options, editing transformations, source boundaries, and the rendering lifecycle, including Mermaid width validation and delayed rendering.
+Verified with Obsidian 1.12.7 on Linux using the default theme: Reading view and Live Preview, captionless and mixed content, centered grids sized to their content, independent spacing, grid boundaries, caption positions, spans, horizontal scrolling in narrow panes, explicit image widths, Mermaid code blocks and note/block embeds with independent widths, Mermaid width edits and aspect ratios, wide tables, table edits, commands and Undo, and disabling/re-enabling the plugin. Figure and table styles are compared with ordinary note content in light and dark modes and with customized table border colors. Source mode and expanded Live Preview callouts are checked in light and dark themes, including native code-block font, spacing, and corner comparisons, distinct nested backgrounds, ordinary quote and inline formatting preservation, typing, Undo, and cleanup. Unit tests cover options, editing transformations, source boundaries, the rendering lifecycle, Mermaid sizing, video dimension parsing and cleanup, and delayed rendering.
 
 Implemented features include captions, grids, column spans, layout settings, and editing commands. Automatic numbering, cross-references, subfigure labels such as (a)/(b), and vault-wide lists of figures and tables are not implemented. Print CSS is included, but PDF export, physical mobile devices, and community themes still need verification.
 

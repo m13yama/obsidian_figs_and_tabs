@@ -14,13 +14,14 @@ function isMermaidEmbed(element: Element): boolean {
   });
 }
 
-/** Figure-only paragraphs are one item; prose with an inline image remains prose. */
+/** Figure-only paragraphs are one item; prose with inline media remains prose. */
 function containsOnlyFigures(node: Node): boolean {
   if (node.nodeType === 3) return !node.textContent?.trim();
   if (node.nodeType === 8) return true;
   if (node.nodeType !== 1) return false;
   const element = node as Element;
-  if (element.matches("img, .image-embed, .mermaid, br")) return true;
+  if (element.matches("img, video, .image-embed, .mermaid, br")) return true;
+  if (element.matches(".media-embed")) return element.querySelector("video") !== null;
   if (element.matches(".internal-embed")) return isMermaidEmbed(element);
   return element.matches("p, a, span, div.el-pre, div.el-p") && Array.from(element.childNodes).every(containsOnlyFigures);
 }
@@ -28,7 +29,7 @@ function containsOnlyFigures(node: Node): boolean {
 function plainGridItemKind(element: Element): "table" | "figure" | null {
   if (element.matches("table")) return "table";
   if (element.matches("div.table-wrapper, div.el-table") && element.querySelector(":scope > table")) return "table";
-  const figures = "img, .image-embed, .mermaid";
+  const figures = "img, video, .image-embed, .mermaid";
   const hasFigure = element.matches(figures) || element.querySelector(figures) !== null;
   return hasFigure && containsOnlyFigures(element) ? "figure" : null;
 }

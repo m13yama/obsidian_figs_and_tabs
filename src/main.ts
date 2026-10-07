@@ -7,20 +7,32 @@ import { DEFAULT_SETTINGS, loadSettings } from "./options";
 import type { Settings } from "./options";
 import { CalloutRenderer, containsCallouts } from "./render";
 import type { CalloutController } from "./render";
+import { extractVideoEmbeds, VideoSizeRenderer } from "./video";
+import type { VideoSizeController } from "./video";
 
-class CalloutRenderChild extends MarkdownRenderChild {
-  private controller?: CalloutController;
+class LayoutRenderChild extends MarkdownRenderChild {
+  private calloutController?: CalloutController;
+  private videoController?: VideoSizeController;
 
-  constructor(element: HTMLElement, private readonly renderer: CalloutRenderer) {
+  constructor(
+    element: HTMLElement,
+    private readonly calloutRenderer: CalloutRenderer,
+    private readonly videoRenderer: VideoSizeRenderer,
+    private readonly markdown: string,
+  ) {
     super(element);
   }
 
   onload(): void {
-    this.controller = this.renderer.watch(this.containerEl);
+    if (containsCallouts(this.containerEl)) this.calloutController = this.calloutRenderer.watch(this.containerEl);
+    if (extractVideoEmbeds(this.markdown).length > 0 || this.containerEl.querySelector("video")) {
+      this.videoController = this.videoRenderer.watchMarkdown(this.containerEl, this.markdown);
+    }
   }
 
   onunload(): void {
-    this.controller?.destroy();
+    this.calloutController?.destroy();
+    this.videoController?.destroy();
   }
 }
 
@@ -84,15 +96,21 @@ class FiguresAndTablesSettingTab extends PluginSettingTab {
 export default class FiguresAndTablesPlugin extends Plugin {
   settings: Settings = { ...DEFAULT_SETTINGS };
   private renderer!: CalloutRenderer;
+  private videoRenderer!: VideoSizeRenderer;
 
   async onload(): Promise<void> {
     this.settings = loadSettings(await this.loadData());
     this.renderer = new CalloutRenderer(() => this.settings);
+    this.videoRenderer = new VideoSizeRenderer();
     this.register(() => this.renderer.destroy());
+    this.register(() => this.videoRenderer.destroy());
     this.registerMarkdownPostProcessor((element, context) => {
-      if (containsCallouts(element)) context.addChild(new CalloutRenderChild(element, this.renderer));
+      const markdown = context.getSectionInfo(element)?.text ?? "";
+      if (containsCallouts(element) || extractVideoEmbeds(markdown).length > 0 || element.querySelector("video")) {
+        context.addChild(new LayoutRenderChild(element, this.renderer, this.videoRenderer, markdown));
+      }
     }, 100);
-    this.registerEditorExtension(calloutEditorExtension(this.renderer));
+    this.registerEditorExtension(calloutEditorExtension(this.renderer, this.videoRenderer));
     this.addSettingTab(new FiguresAndTablesSettingTab(this.app, this));
 
     for (const [kind, name] of [["figure", "Insert figure / wrap selection"], ["table", "Insert table / wrap selection"]] as const) {

@@ -139,15 +139,39 @@
 
 .ft-figure > .callout-content img,
 .ft-grid-figure img,
-img.ft-grid-figure {
+img.ft-grid-figure,
+.ft-figure > .callout-content video,
+.ft-grid-figure video,
+video.ft-grid-figure {
   max-width: 100%;
   height: auto;
   object-fit: contain;
 }
 
+.ft-figure > .callout-content video,
+.ft-grid-figure video,
+video.ft-grid-figure {
+  display: block;
+  margin-inline: auto;
+}
+
 .ft-figure > .callout-content .image-embed,
-.ft-grid-figure .image-embed {
+.ft-grid-figure .image-embed,
+.ft-figure > .callout-content .media-embed,
+.ft-grid-figure .media-embed {
   max-width: 100%;
+}
+
+/* Obsidian does not apply image-style embed dimensions to videos itself. */
+video.ft-video {
+  width: min(100%, var(--ft-video-width)) !important;
+  max-width: 100%;
+  height: auto !important;
+}
+
+video.ft-video.ft-video-with-ratio {
+  aspect-ratio: var(--ft-video-aspect-ratio);
+  object-fit: contain;
 }
 
 .ft-table > .callout-content {
@@ -178,15 +202,22 @@ img.ft-grid-figure {
   align-self: end;
 }
 
-/* Let the outer grid scroll at each image's natural or explicitly authored size. */
+/* Let the outer grid scroll at each visual's natural or explicitly authored size. */
 .ft-grid :is(.ft-figure, .ft-grid-figure) img,
-.ft-grid img.ft-grid-figure {
+.ft-grid img.ft-grid-figure,
+.ft-grid :is(.ft-figure, .ft-grid-figure) video,
+.ft-grid video.ft-grid-figure {
   max-width: none;
 }
 
 .ft-grid :is(.ft-figure, .ft-grid-figure) img:not([width]),
 .ft-grid img.ft-grid-figure:not([width]) {
   width: var(--ft-image-width, auto);
+}
+
+.ft-grid :is(.ft-figure, .ft-grid-figure) video.ft-video,
+.ft-grid video.ft-grid-figure.ft-video {
+  width: var(--ft-video-width) !important;
 }
 
 /* Override Live Preview's extra margins for nested callouts as well. */

@@ -92,6 +92,18 @@ describe("native callout decoration", () => {
     expect(root.querySelectorAll('[class*="ft-grid"]')).toHaveLength(0);
   });
 
+  it("treats bare video embeds as figures in grids but leaves prose with inline video alone", () => {
+    const { root, renderer } = setup(callout("grid", "Grid",
+      '<p><span class="internal-embed media-embed"><video></video></span></p>' +
+      '<video src="bare.mp4"></video>' +
+      '<p>Explanation <video src="inline.mp4"></video></p>'));
+    const content = root.querySelector(".ft-grid > .callout-content")!;
+    expect(content.querySelectorAll(":scope > .ft-grid-figure")).toHaveLength(2);
+    expect(content.children[2]!.classList.contains("ft-grid-item")).toBe(false);
+    renderer.destroy();
+    expect(content.querySelector(".ft-grid-item")).toBeNull();
+  });
+
   it("updates bare items after async rendering and image-only paragraphs becoming prose", async () => {
     const { root } = setup(callout("grid", "Grid", '<p><img src="a.svg"> </p>'));
     const content = root.querySelector(".callout-content")!;

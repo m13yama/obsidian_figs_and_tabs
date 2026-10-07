@@ -44,7 +44,7 @@ describe("video size syntax", () => {
 describe("video rendering", () => {
   it("centers sized standalone videos", () => {
     const style = document.createElement("style");
-    style.textContent = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+    style.textContent = readFileSync("styles.css", "utf8");
     document.head.append(style);
     const video = document.createElement("video");
     video.className = "ft-video";
